@@ -93,15 +93,13 @@
 <div class="container">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap;">
     <h1 style="margin:0;">📋 Daftar Hadir Registrasi <span id="connStatus" class="conn-status conn-loading">Menghubungkan…</span></h1>
-    <!-- Tombol Logout Admin -->
     <button class="btn btn-danger btn-sm" id="btnLogout" style="display:none;" onclick="logoutAdmin()">🚪 Logout Admin</button>
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('registrasi', this)">📝 Registrasi Peserta</button>
-    <!-- Tab Admin -->
-    <button class="tab-btn" onclick="requestAdmin('scan', this)">📷 Scan Kehadiran (Admin)</button>
-    <button class="tab-btn" onclick="requestAdmin('data', this)">📊 Data Peserta (Admin)</button>
+    <button class="tab-btn active" id="tab-btn-registrasi" onclick="switchTab('registrasi', this)">📝 Registrasi Peserta</button>
+    <button class="tab-btn" id="tab-btn-scan" onclick="requestAdmin('scan', this)">📷 Scan Kehadiran (Admin)</button>
+    <button class="tab-btn" id="tab-btn-data" onclick="requestAdmin('data', this)">📊 Data Peserta (Admin)</button>
   </div>
 
   <!-- TAB REGISTRASI -->
@@ -246,7 +244,6 @@ let scanning = false;
 let lastScanTime = 0;
 let isOnline = false;
 
-// State Admin
 let isAdmin = false;
 let adminPassword = "";
 let pendingTab = null;
@@ -291,8 +288,6 @@ function requestAdmin(tabName, btn) {
 
 function verifyAdmin() {
   const pwd = document.getElementById('adminPassword').value;
-  // Validasi password langsung di frontend untuk buka tab
-  // (Validasi keamanan data sesungguhnya ada di backend Apps Script)
   if (pwd === 'admin123') { 
     isAdmin = true;
     adminPassword = pwd;
@@ -316,7 +311,7 @@ function logoutAdmin() {
   isAdmin = false;
   adminPassword = "";
   document.getElementById('btnLogout').style.display = 'none';
-  switchTab('registrasi', document.querySelector('.tab-btn'));
+  switchTab('registrasi', document.getElementById('tab-btn-registrasi'));
   showToast('Logout Berhasil', 'info');
   stopScanner();
 }
@@ -332,8 +327,6 @@ function switchTab(name, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   
-  // Jika btn yang diklik adalah tab admin tapi kita dipanggil dari requestAdmin,
-  // btn mungkin sudah terpilih. Kita pastikan class active-nya pas.
   if(btn) btn.classList.add('active');
 
   if (name === 'data') renderTable();
@@ -361,7 +354,7 @@ function loadData(showToastNotif = false) {
           waktuHadir: row.WaktuHadir || null
         }));
         setConn('online');
-        if(isAdmin) renderTable(); // Hanya render tabel jika admin
+        if(isAdmin) renderTable();
         if (showToastNotif) showToast('Data dimuat: ' + peserta.length + ' peserta', 'success');
       } catch (err) {
         console.error(err);
@@ -389,7 +382,7 @@ function loadData(showToastNotif = false) {
   });
 }
 
-/* ================= KIRIM DATA (POST NO-CORS) ================= */
+/* ================= KIRIM DATA ================= */
 function sendData(payload) {
   const formData = new URLSearchParams();
   for (const key in payload) formData.append(key, payload[key]);
@@ -585,7 +578,7 @@ async function processCode(code) {
   await sendData({ action: 'updateHadir', kode: code, waktuHadir: waktu, password: adminPassword });
   
   resultEl.classList.add('success');
-  resultEl.innerHTML = `✅ Selamat datang, <b>${local.nama}</b>!`;
+  resultEl.innerHTML = `✅ Selamat datang, <b>${local.nama}</b>!<br><small>Mengalihkan ke Data Peserta...</small>`;
   
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -596,61 +589,11 @@ async function processCode(code) {
     osc.start(); osc.stop(ctx.currentTime + 0.3);
   } catch(e) {}
 
-  setTimeout(() => loadData(), 1000);
-}
-
-/* ================= EXPORT & PRINT ================= */
-function exportCSV() {
-  const list = getFiltered();
-  if (list.length === 0) return;
-  const headers = ['No','Kode','Nama','Perusahaan','Jabatan','No HP','Email','Status','Waktu Hadir'];
-  const rows = list.map((p, i) => [i+1, p.kode, p.nama, p.perusahaan, p.jabatan, p.hp, p.email, p.hadir?'Hadir':'Belum', p.waktuHadir||'-']);
-  const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `daftar-hadir.csv`; a.click();
-}
-
-function exportExcel() {
-  const list = getFiltered();
-  if (list.length === 0) return;
-  let html = `<html><head><meta charset="UTF-8"></head><body><table border="1"><tr><th>No</th><th>Kode</th><th>Nama</th><th>Perusahaan</th><th>Jabatan</th><th>HP</th><th>Email</th><th>Status</th></tr>`;
-  list.forEach((p, i) => { html += `<tr><td>${i+1}</td><td>${p.kode}</td><td>${p.nama}</td><td>${p.perusahaan}</td><td>${p.jabatan}</td><td>${p.hp}</td><td>${p.email}</td><td>${p.hadir?'Hadir':'Belum'}</td></tr>`; });
-  html += `</table></body></html>`;
-  const blob = new Blob(['\uFEFF' + html], { type: 'application/vnd.ms-excel' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `daftar-hadir.xls`; a.click();
-}
-
-function printAllQrCodes() {
-  if (peserta.length === 0) return;
-  const win = window.open('', '_blank');
-  let html = `<html><head><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><style>body{font-family:Arial;padding:20px;} .kartu{display:inline-block;width:220px;border:1px dashed #999;padding:15px;margin:10px;text-align:center;page-break-inside:avoid;vertical-align:top;} h4{margin:5px 0;font-size:14px;} p{margin:2px 0;font-size:11px;color:#555;} .qr-container{display:flex;justify-content:center;margin-top:8px;}</style></head><body>`;
-  
-  peserta.forEach(p => {
-    html += `<div class="kartu">
-      <h4>${p.nama}</h4>
-      <p>${p.jabatan} - ${p.perusahaan}</p>
-      <div class="qr-container qr" data-code="${p.kode}"></div>
-    </div>`;
-  });
-  
-  html += `<script>
-    document.querySelectorAll('.qr').forEach(div => {
-      new QRCode(div, {
-        text: div.dataset.code,
-        width: 120, height: 120,
-        correctLevel : QRCode.CorrectLevel.H
-      });
+  // ================== LOGIKA PINDAH HALAMAN ==================
+  // Tunggu 1 detik, lalu ambil data terbaru dan pindah ke tab Data Peserta
+  setTimeout(() => {
+    loadData().then(() => {
+      switchTab('data', document.getElementById('tab-btn-data'));
     });
-    setTimeout(()=>window.print(), 800);
-  <\/script></body></html>`;
-  
-  win.document.write(html); 
-  win.document.close();
+  }, 1000);
 }
-
-/* ================= INIT ================= */
-loadData();
-setInterval(() => { if (isAdmin && document.getElementById('tab-data').classList.contains('active')) loadData(); }, 30000);
-</script>
-</body>
-</html>
