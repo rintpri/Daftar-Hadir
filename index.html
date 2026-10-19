@@ -221,9 +221,9 @@
 
 <script>
 /* ============================================================
-   ⚠️  GANTI DENGAN URL WEB APP ANDA DARI APPS SCRIPT
+   URL WEB APP ANDA (Sudah dimasukkan)
    ============================================================ */
-const API_URL = 'https://script.google.com/macros/s/XXXXXXXXXXXX/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzgCRTHKXhqXS20HmW9ioDoRE3qlObdqnivUS_V9934rRv0pOkGNGPRLGSPvwFyDntAmw/exec';
 
 /* ================= STATE ================= */
 let peserta = [];
@@ -298,30 +298,42 @@ async function loadData(showToastNotif = false) {
 
 /* ================= API: CREATE PESERTA ================= */
 async function createPeserta(data) {
+  // PERBAIKAN CORS: Kirim data menggunakan URLSearchParams (x-www-form-urlencoded)
+  const formData = new URLSearchParams();
+  for (const key in data) {
+    formData.append(key, data[key]);
+  }
+  
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(data)
+    body: formData
   });
   return await res.json();
 }
 
 /* ================= API: UPDATE HADIR ================= */
 async function updateHadir(kode, waktuHadir) {
+  const formData = new URLSearchParams();
+  formData.append('action', 'updateHadir');
+  formData.append('kode', kode);
+  formData.append('waktuHadir', waktuHadir);
+  
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: 'updateHadir', kode, waktuHadir })
+    body: formData
   });
   return await res.json();
 }
 
 /* ================= API: DELETE ================= */
 async function deletePeserta(kode) {
+  const formData = new URLSearchParams();
+  formData.append('action', 'delete');
+  formData.append('kode', kode);
+  
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: 'delete', kode })
+    body: formData
   });
   return await res.json();
 }
