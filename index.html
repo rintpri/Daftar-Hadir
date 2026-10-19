@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daftar Hadir - Registrasi Barcode</title>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+  body { background: #f0f4f8; color: #1e293b; padding: 20px; }
+  .container { max-width: 1200px; margin: 0 auto; }
+  h1 { text-align: center; color: #0f172a; margin-bottom: 20px; }
+  .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 24px; }
+  .card h2 { margin-bottom: 16px; color: #1d4ed8; font-size: 1.2rem; border-left: 4px solid #1d4ed8; padding-left: 10px; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .form-group { display: flex; flex-direction: column; }
+  label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #475569; }
+  input, select { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; transition: 0.2s; }
+  input:focus, select:focus { outline: none; border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,0.15); }
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: 0.2s; }
+  .btn-primary { background: #1d4ed8; color: #fff; }
+  .btn-primary:hover { background: #1e40af; }
+  .btn-success { background: #16a34a; color: #fff; }
+  .btn-success:hover { background: #15803d; }
+  .btn-danger { background: #dc2626; color: #fff; }
+  .btn-danger:hover { background: #b91c1c; }
+  .btn-warning { background: #f59e0b; color: #fff; }
+  .btn-warning:hover { background: #d97706; }
+  .btn-secondary { background: #475569; color: #fff; }
+  .btn-secondary:hover { background: #334155; }
+  .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .form-actions { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+  #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 12px; overflow: hidden; display: none; }
+  #reader.active { display: block; }
+  .scan-result { margin-top: 16px; padding: 16px; border-radius: 10px; text-align: center; font-weight: 600; display: none; }
+  .scan-result.success { display: block; background: #dcfce7; color: #15803d; border: 2px solid #16a34a; }
+  .scan-result.error { display: block; background: #fee2e2; color: #b91c1c; border: 2px solid #dc2626; }
+  .scan-result.warn { display: block; background: #fef3c7; color: #b45309; border: 2px solid #f59e0b; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+  th { background: #f1f5f9; font-weight: 700; color: #334155; white-space: nowrap; }
+  tr:hover { background: #f8fafc; }
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+  .badge-hadir { background: #dcfce7; color: #15803d; }
+  .badge-belum { background: #fef3c7; color: #b45309; }
+
+  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; justify-content: center; align-items: center; padding: 20px; }
+  .modal.active { display: flex; }
+  .modal-content { background: #fff; border-radius: 14px; padding: 28px; max-width: 380px; width: 100%; text-align: center; }
+  .modal-content svg { max-width: 100%; margin: 16px 0; }
+  .modal-content .info { text-align: left; font-size: 0.9rem; margin-bottom: 16px; }
+  .modal-content .info p { margin: 4px 0; }
+  .modal-content .info span { font-weight: 700; color: #1d4ed8; }
+
+  .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab-btn { padding: 10px 20px; border: 2px solid #cbd5e1; background: #fff; border-radius: 8px; cursor: pointer; font-weight: 600; color: #64748b; }
+  .tab-btn.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat { background: #f8fafc; border-radius: 10px; padding: 14px; text-align: center; border: 1px solid #e2e8f0; }
+  .stat h3 { font-size: 1.6rem; color: #1d4ed8; }
+  .stat p { font-size: 0.8rem; color: #64748b; }
+
+  .filter-bar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+  .filter-bar input { flex: 1; min-width: 200px; }
+  .filter-bar select { min-width: 140px; }
+
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 10px; color: #fff; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; transform: translateY(20px); transition: 0.3s; z-index: 1000; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: #16a34a; }
+  .toast.error { background: #dc2626; }
+  .toast.info { background: #1d4ed8; }
+
+  .conn-status { display: inline-block; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; margin-left: 8px; }
+  .conn-online { background: #dcfce7; color: #15803d; }
+  .conn-offline { background: #fee2e2; color: #b91c1c; }
+  .conn-loading { background: #e0e7ff; color: #3730a3; }
+
+  @media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📋 Daftar Hadir Registrasi <span id="connStatus" class="conn-status conn-loading">Menghubungkan…</span></h1>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('registrasi', this)">📝 Registrasi</button>
+    <button class="tab-btn" onclick="switchTab('scan', this)">📷 Scan Kehadiran</button>
+    <button class="tab-btn" onclick="switchTab('data', this)">📊 Data Peserta</button>
+  </div>
+
+  <!-- TAB REGISTRASI -->
+  <div id="tab-registrasi" class="tab-content active">
+    <div class="card">
+      <h2>Formulir Pendaftaran Peserta</h2>
+      <form id="formRegistrasi">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nama Lengkap *</label>
+            <input type="text" id="nama" required placeholder="Nama peserta">
+          </div>
+          <div class="form-group">
+            <label>Nama Perusahaan *</label>
+            <input type="text" id="perusahaan" required placeholder="PT / CV / Instansi">
+          </div>
+          <div class="form-group">
+            <label>Jabatan *</label>
+            <input type="text" id="jabatan" required placeholder="Contoh: Manager">
+          </div>
+          <div class="form-group">
+            <label>No. HP *</label>
+            <input type="tel" id="hp" required placeholder="08xxxxxxxxxx">
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" id="email" required placeholder="nama@email.com">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" id="btnSubmit" class="btn btn-primary">💾 Simpan & Generate Barcode</button>
+          <button type="reset" class="btn btn-warning">↺ Reset</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TAB SCAN -->
+  <div id="tab-scan" class="tab-content">
+    <div class="card">
+      <h2>Scan Barcode Kehadiran</h2>
+      <p style="margin-bottom:14px;color:#64748b;font-size:0.9rem;">
+        Arahkan barcode peserta ke kamera, atau ketik kode secara manual.
+      </p>
+      <div class="form-actions" style="margin-bottom:16px;">
+        <button class="btn btn-success" id="btnStartScan" onclick="startScanner()">📷 Mulai Kamera</button>
+        <button class="btn btn-danger" id="btnStopScan" onclick="stopScanner()" style="display:none;">⏹ Stop Kamera</button>
+      </div>
+      <div id="reader"></div>
+
+      <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+        <input type="text" id="manualCode" placeholder="Ketik kode barcode manual..." style="flex:1; min-width:200px;">
+        <button class="btn btn-primary" onclick="processManual()">✓ Proses</button>
+      </div>
+
+      <div id="scanResult" class="scan-result"></div>
+    </div>
+  </div>
+
+  <!-- TAB DATA -->
+  <div id="tab-data" class="tab-content">
+    <div class="card">
+      <h2>Data Peserta</h2>
+      <div class="stats">
+        <div class="stat"><h3 id="statTotal">0</h3><p>Total Peserta</p></div>
+        <div class="stat"><h3 id="statHadir" style="color:#16a34a;">0</h3><p>Hadir</p></div>
+        <div class="stat"><h3 id="statBelum" style="color:#f59e0b;">0</h3><p>Belum Hadir</p></div>
+      </div>
+
+      <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="🔍 Cari nama / perusahaan / email / kode..." oninput="renderTable()">
+        <select id="filterStatus" onchange="renderTable()">
+          <option value="all">Semua Status</option>
+          <option value="hadir">Sudah Hadir</option>
+          <option value="belum">Belum Hadir</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="resetFilter()">↺ Reset Filter</button>
+        <button class="btn btn-primary btn-sm" onclick="loadData(true)">🔄 Refresh</button>
+      </div>
+
+      <div class="form-actions" style="margin-bottom:14px;">
+        <button class="btn btn-primary btn-sm" onclick="printAllBarcodes()">🖨️ Cetak Semua Barcode</button>
+        <button class="btn btn-success btn-sm" onclick="exportCSV()">📥 Export CSV</button>
+        <button class="btn btn-success btn-sm" onclick="exportExcel()">📊 Export Excel</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑️ Hapus Semua Data</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>No</th><th>Kode</th><th>Nama</th><th>Perusahaan</th><th>Jabatan</th>
+              <th>No. HP</th><th>Email</th><th>Status</th><th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyPeserta">
+            <tr><td colspan="9" style="text-align:center;padding:30px;color:#94a3b8;">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BARCODE -->
+<div class="modal" id="modalBarcode">
+  <div class="modal-content">
+    <h3 style="color:#1d4ed8;">🎫 Kartu Peserta</h3>
+    <div id="printArea">
+      <div class="info" id="modalInfo"></div>
+      <svg id="barcodeSvg"></svg>
+      <p style="font-size:0.75rem;color:#94a3b8;">Tunjukkan barcode ini saat registrasi kehadiran</p>
+    </div>
+    <div class="form-actions" style="justify-content:center;margin-top:16px;">
+      <button class="btn btn-primary" onclick="printBarcode()">🖨️ Cetak</button>
+      <button class="btn btn-danger" onclick="closeModal()">✕ Tutup</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   ⚠️  GANTI DENGAN URL WEB APP ANDA DARI APPS SCRIPT
+   ============================================================ */
+const API_URL = 'https://script.google.com/macros/s/XXXXXXXXXXXX/exec';
+
+/* ================= STATE ================= */
+let peserta = [];
+let html5QrCode = null;
+let scanning = false;
+let lastScanTime = 0;
+let isOnline = false;
+
+/* ================= TOAST ================= */
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = 'toast ' + type; }, 3000);
+}
+
+/* ================= CONN STATUS ================= */
+function setConn(state) {
+  const el = document.getElementById('connStatus');
+  if (state === 'online') {
+    el.className = 'conn-status conn-online';
+    el.textContent = '● Terhubung ke Spreadsheet';
+    isOnline = true;
+  } else if (state === 'offline') {
+    el.className = 'conn-status conn-offline';
+    el.textContent = '● Gagal terhubung';
+    isOnline = false;
+  } else {
+    el.className = 'conn-status conn-loading';
+    el.textContent = 'Menghubungkan…';
+  }
+}
+
+/* ================= TABS ================= */
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'data') renderTable();
+  if (name !== 'scan') stopScanner();
+}
+
+/* ================= API: LOAD DATA ================= */
+async function loadData(showToastNotif = false) {
+  setConn('loading');
+  try {
+    const res = await fetch(API_URL + '?t=' + Date.now(), { method: 'GET' });
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error(data.message || 'Format respons tidak dikenali');
+    peserta = data.map((row, i) => ({
+      id: i,
+      kode: String(row.Kode || '').trim(),
+      nama: row.Nama || '',
+      perusahaan: row.Perusahaan || '',
+      jabatan: row.Jabatan || '',
+      hp: row.HP || '',
+      email: row.Email || '',
+      hadir: row.Hadir === true || String(row.Hadir).toUpperCase() === 'TRUE',
+      waktuHadir: row.WaktuHadir || null
+    }));
+    setConn('online');
+    renderTable();
+    if (showToastNotif) showToast('Data dimuat: ' + peserta.length + ' peserta', 'success');
+  } catch (err) {
+    console.error(err);
+    setConn('offline');
+    showToast('Gagal memuat data: ' + err.message, 'error');
+  }
+}
+
+/* ================= API: CREATE PESERTA ================= */
+async function createPeserta(data) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(data)
+  });
+  return await res.json();
+}
+
+/* ================= API: UPDATE HADIR ================= */
+async function updateHadir(kode, waktuHadir) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'updateHadir', kode, waktuHadir })
+  });
+  return await res.json();
+}
+
+/* ================= API: DELETE ================= */
+async function deletePeserta(kode) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'delete', kode })
+  });
+  return await res.json();
+}
+
+/* ================= GENERATE KODE ================= */
+function generateKode() {
+  const d = new Date();
+  const ymd = d.getFullYear().toString() +
+              String(d.getMonth()+1).padStart(2,'0') +
+              String(d.getDate()).padStart(2,'0');
+  const urut = String(peserta.length + 1).padStart(4, '0');
+  const rand = String(Math.floor(Math.random() * 90) + 10);
+  return `REG-${ymd}-${urut}${rand}`;
+}
+
+/* ================= FORM SUBMIT ================= */
+document.getElementById('formRegistrasi').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  btn.textContent = '⏳ Menyimpan...';
+
+  const data = {
+    Kode: generateKode(),
+    Nama: document.getElementById('nama').value.trim(),
+    Perusahaan: document.getElementById('perusahaan').value.trim(),
+    Jabatan: document.getElementById('jabatan').value.trim(),
+    HP: document.getElementById('hp').value.trim(),
+    Email: document.getElementById('email').value.trim(),
+    Hadir: false,
+    WaktuHadir: ''
+  };
+
+  try {
+    const result = await createPeserta(data);
+    if (result.result !== 'success') throw new Error(result.message || 'Gagal menyimpan');
+    this.reset();
+    showToast('Peserta didaftarkan: ' + data.Nama, 'success');
+    showBarcodeModal(data);
+    await loadData();
+  } catch (err) {
+    showToast('Gagal menyimpan: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 Simpan & Generate Barcode';
+  }
+});
+
+/* ================= MODAL BARCODE ================= */
+function showBarcodeModal(p) {
+  document.getElementById('modalInfo').innerHTML = `
+    <p><span>${p.nama || p.Nama}</span></p>
+    <p>${p.jabatan || p.Jabatan} - ${p.perusahaan || p.Perusahaan}</p>
+    <p style="font-size:0.8rem;color:#64748b;">${p.email || p.Email} | ${p.hp || p.HP}</p>
+  `;
+  JsBarcode("#barcodeSvg", p.kode || p.Kode, {
+    format: "CODE128", lineColor: "#0f172a",
+    width: 2, height: 80, displayValue: true, fontSize: 14, margin: 10
+  });
+  document.getElementById('modalBarcode').classList.add('active');
+}
+function closeModal() { document.getElementById('modalBarcode').classList.remove('active'); }
+function printBarcode() {
+  const originalTitle = document.title;
+  document.title = 'Barcode-Peserta';
+  window.print();
+  document.title = originalTitle;
+}
+
+/* ================= FILTER & RENDER ================= */
+function getFiltered() {
+  const q = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+  const status = document.getElementById('filterStatus')?.value || 'all';
+  return peserta.filter(p => {
+    const matchQ = !q || [p.nama, p.perusahaan, p.email, p.kode, p.jabatan, p.hp]
+      .some(v => String(v).toLowerCase().includes(q));
+    const matchS = status === 'all' ||
+      (status === 'hadir' && p.hadir) ||
+      (status === 'belum' && !p.hadir);
+    return matchQ && matchS;
+  });
+}
+
+function resetFilter() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('filterStatus').value = 'all';
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tbodyPeserta');
+  const total = peserta.length;
+  const hadir = peserta.filter(p => p.hadir).length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statHadir').textContent = hadir;
+  document.getElementById('statBelum').textContent = total - hadir;
+
+  const list = getFiltered();
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:#94a3b8;">
+      ${total === 0 ? 'Belum ada data peserta' : 'Tidak ada data yang cocok dengan filter'}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = list.map((p, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td><code style="font-size:0.8rem;">${p.kode}</code></td>
+      <td>${esc(p.nama)}</td>
+      <td>${esc(p.perusahaan)}</td>
+      <td>${esc(p.jabatan)}</td>
+      <td>${esc(p.hp)}</td>
+      <td>${esc(p.email)}</td>
+      <td>${p.hadir
+        ? `<span class="badge badge-hadir">✓ Hadir</span><br><small style="color:#94a3b8;">${esc(p.waktuHadir || '')}</small>`
+        : `<span class="badge badge-belum">Belum</span>`}</td>
+      <td>
+        <button class="btn btn-primary btn-sm" onclick="viewBarcode('${p.kode}')" title="Lihat Barcode">🎫</button>
+        <button class="btn btn-danger btn-sm" onclick="hapusPeserta('${p.kode}')" title="Hapus">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function viewBarcode(kode) {
+  const p = peserta.find(x => x.kode === kode);
+  if (p) showBarcodeModal(p);
+}
+
+async function hapusPeserta(kode) {
+  if (!confirm('Hapus peserta ' + kode + '?')) return;
+  try {
+    const r = await deletePeserta(kode);
+    if (r.result !== 'success') throw new Error(r.message || 'Gagal hapus');
+    showToast('Peserta dihapus', 'info');
+    await loadData();
+  } catch (err) {
+    showToast('Gagal hapus: ' + err.message, 'error');
+  }
+}
+
+async function clearAll() {
+  if (!confirm('Hapus SEMUA data peserta? Tindakan ini tidak bisa dibatalkan.')) return;
+  if (!confirm('Yakin? Semua baris di spreadsheet akan dihapus.')) return;
+  const total = peserta.length;
+  for (const p of peserta) {
+    try { await deletePeserta(p.kode); } catch(e) {}
+  }
+  showToast(total + ' peserta dihapus', 'info');
+  await loadData();
+}
+
+/* ================= EXPORT ================= */
+function exportCSV() {
+  const list = getFiltered();
+  if (list.length === 0) { showToast('Tidak ada data untuk diexport', 'error'); return; }
+  const headers = ['No','Kode','Nama','Perusahaan','Jabatan','No HP','Email','Status','Waktu Hadir'];
+  const rows = list.map((p, i) => [
+    i + 1, p.kode, p.nama, p.perusahaan, p.jabatan, p.hp, p.email,
+    p.hadir ? 'Hadir' : 'Belum Hadir', p.waktuHadir || '-'
+  ]);
+  const csv = [headers, ...rows]
+    .map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(','))
+    .join('\r\n');
+  downloadBlob('\uFEFF' + csv, `daftar-hadir-${dateStamp()}.csv`, 'text/csv;charset=utf-8;');
+  showToast('CSV berhasil diunduh', 'success');
+}
+
+function exportExcel() {
+  const list = getFiltered();
+  if (list.length === 0) { showToast('Tidak ada data untuk diexport', 'error'); return; }
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+              xmlns:x="urn:schemas-microsoft-com:office:excel"
+              xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8">
+              <style>table{border-collapse:collapse;} th,td{border:1px solid #999;padding:6px;font-family:Arial;font-size:12px;}
+              th{background:#1d4ed8;color:#fff;}</style></head><body>
+              <h2>Daftar Hadir Registrasi</h2>
+              <p>Diekspor: ${new Date().toLocaleString('id-ID')}</p>
+              <table><thead><tr>
+              <th>No</th><th>Kode</th><th>Nama</th><th>Perusahaan</th><th>Jabatan</th>
+              <th>No HP</th><th>Email</th><th>Status</th><th>Waktu Hadir</th>
+              </tr></thead><tbody>`;
+  list.forEach((p, i) => {
+    html += `<tr>
+      <td>${i+1}</td><td>${esc(p.kode)}</td><td>${esc(p.nama)}</td><td>${esc(p.perusahaan)}</td>
+      <td>${esc(p.jabatan)}</td><td>${esc(p.hp)}</td><td>${esc(p.email)}</td>
+      <td>${p.hadir ? 'Hadir' : 'Belum Hadir'}</td><td>${esc(p.waktuHadir || '-')}</td>
+    </tr>`;
+  });
+  html += `</tbody></table></body></html>`;
+  downloadBlob('\uFEFF' + html, `daftar-hadir-${dateStamp()}.xls`, 'application/vnd.ms-excel');
+  showToast('Excel berhasil diunduh', 'success');
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function dateStamp() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+function downloadBlob(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ================= SCANNER ================= */
+function startScanner() {
+  if (scanning) return;
+  const readerEl = document.getElementById('reader');
+  readerEl.classList.add('active');
+  html5QrCode = new Html5Qrcode("reader");
+  Html5Qrcode.getCameras().then(cameras => {
+    if (!cameras || cameras.length === 0) { showToast('Kamera tidak ditemukan', 'error'); return; }
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 280, height: 180 } },
+      (decodedText) => {
+        const now = Date.now();
+        if (now - lastScanTime < 2500) return;
+        lastScanTime = now;
+        processCode(decodedText);
+      },
+      () => {}
+    ).then(() => {
+      scanning = true;
+      document.getElementById('btnStartScan').style.display = 'none';
+      document.getElementById('btnStopScan').style.display = 'inline-block';
+    }).catch(err => showToast('Gagal membuka kamera: ' + err, 'error'));
+  }).catch(() => showToast('Izin kamera ditolak atau tidak tersedia', 'error'));
+}
+
+function stopScanner() {
+  if (!scanning || !html5QrCode) {
+    document.getElementById('reader').classList.remove('active');
+    return;
+  }
+  html5QrCode.stop().then(() => {
+    html5QrCode.clear(); scanning = false;
+    document.getElementById('reader').classList.remove('active');
+    document.getElementById('btnStartScan').style.display = 'inline-block';
+    document.getElementById('btnStopScan').style.display = 'none';
+  }).catch(() => {});
+}
+
+function processManual() {
+  const code = document.getElementById('manualCode').value.trim();
+  if (!code) return;
+  processCode(code);
+  document.getElementById('manualCode').value = '';
+}
+
+async function processCode(code) {
+  const resultEl = document.getElementById('scanResult');
+  resultEl.className = 'scan-result';
+  resultEl.style.display = 'none';
+  resultEl.innerHTML = '';
+
+  // Cek lokal dulu untuk feedback cepat
+  const local = peserta.find(x => x.kode === code);
+  if (!local) {
+    resultEl.classList.add('error');
+    resultEl.innerHTML = `❌ Kode <b>${code}</b> tidak terdaftar!`;
+    showToast('Kode tidak terdaftar', 'error');
+    return;
+  }
+  if (local.hadir) {
+    resultEl.classList.add('warn');
+    resultEl.innerHTML = `⚠️ <b>${local.nama}</b> sudah registrasi pada ${local.waktuHadir}`;
+    showToast('Peserta sudah hadir', 'error');
+    return;
+  }
+
+  const waktu = new Date().toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
+  try {
+    const r = await updateHadir(code, waktu);
+    if (r.result === 'already') {
+      resultEl.classList.add('warn');
+      resultEl.innerHTML = `⚠️ <b>${r.nama}</b> sudah registrasi pada ${r.waktuHadir}`;
+      showToast('Peserta sudah hadir', 'error');
+      return;
+    }
+    if (r.result === 'notfound') {
+      resultEl.classList.add('error');
+      resultEl.innerHTML = `❌ Kode <b>${code}</b> tidak ditemukan di Spreadsheet!`;
+      showToast('Kode tidak ditemukan', 'error');
+      return;
+    }
+    if (r.result !== 'success') throw new Error(r.message || 'Gagal update');
+
+    resultEl.classList.add('success');
+    resultEl.innerHTML = `✅ Selamat datang, <b>${r.nama}</b>!<br>
+      <small>${r.jabatan} - ${r.perusahaan}</small><br>
+      <small>Registrasi: ${r.waktuHadir}</small>`;
+    showToast('Kehadiran tercatat: ' + r.nama, 'success');
+    playBeep();
+    await loadData();
+  } catch (err) {
+    resultEl.classList.add('error');
+    resultEl.innerHTML = `❌ Gagal update: ${err.message}`;
+    showToast('Gagal update: ' + err.message, 'error');
+  }
+}
+
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 880; osc.type = 'sine';
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.start(); osc.stop(ctx.currentTime + 0.3);
+  } catch(e) {}
+}
+
+/* ================= PRINT ALL BARCODES ================= */
+function printAllBarcodes() {
+  if (peserta.length === 0) { showToast('Belum ada data peserta', 'error'); return; }
+  const win = window.open('', '_blank');
+  let html = `<html><head><title>Semua Barcode</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script>
+    <style>
+      body{font-family:Arial;padding:20px;}
+      .kartu{display:inline-block;width:280px;border:1px dashed #999;padding:12px;margin:6px;text-align:center;vertical-align:top;page-break-inside:avoid;}
+      .kartu h4{margin:0 0 4px;font-size:14px;}
+      .kartu p{margin:2px 0;font-size:11px;color:#555;}
+      svg{max-width:100%;}
+    </style></head><body>`;
+  peserta.forEach(p => {
+    html += `<div class="kartu">
+      <h4>${esc(p.nama)}</h4>
+      <p>${esc(p.jabatan)} - ${esc(p.perusahaan)}</p>
+      <svg class="bc" data-code="${esc(p.kode)}"></svg>
+    </div>`;
+  });
+  html += `<script>
+    document.querySelectorAll('.bc').forEach(svg => {
+      JsBarcode(svg, svg.dataset.code, {format:'CODE128',width:1.6,height:50,fontSize:12,margin:4});
+    });
+    setTimeout(()=>window.print(), 600);
+  <\/script></body></html>`;
+  win.document.write(html);
+  win.document.close();
+}
+
+/* ================= INIT ================= */
+loadData();
+// Refresh otomatis setiap 30 detik agar sinkron antar perangkat
+setInterval(() => { if (document.getElementById('tab-data').classList.contains('active')) loadData(); }, 30000);
+</script>
+</body>
+</html>
