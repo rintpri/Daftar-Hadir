@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Form Pertanyaan Cukai</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+  body { background: #f0f4f8; color: #1e293b; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+  .container { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); max-width: 500px; width: 100%; }
+  h2 { color: #1d4ed8; text-align: center; margin-bottom: 10px; }
+  p.subtitle { text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 20px; }
+  .info-box { background: #e0e7ff; border-radius: 8px; padding: 14px; margin-bottom: 20px; font-size: 0.9rem; }
+  .info-box p { margin-bottom: 4px; }
+  .info-box span { font-weight: bold; color: #1d4ed8; }
+  textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; font-family: inherit; margin-bottom: 16px; resize: vertical; }
+  textarea:focus { outline: none; border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,0.15); }
+  .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; background: #16a34a; color: #fff; transition: 0.2s; }
+  .btn:hover { background: #15803d; }
+  .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+  .success-msg { display: none; text-align: center; color: #15803d; font-weight: bold; margin-top: 20px; padding: 16px; background: #dcfce7; border-radius: 8px; }
+  .error-msg { display: none; text-align: center; color: #b91c1c; font-weight: bold; margin-top: 20px; padding: 16px; background: #fee2e2; border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>❓ Form Pertanyaan Cukai</h2>
+  <p class="subtitle">Silakan ajukan pertanyaan Anda seputar materi sosialisasi cukai.</p>
+  
+  <div class="info-box" id="infoPeserta">
+    <p>Memuat data peserta...</p>
+  </div>
+
+  <div id="formArea" style="display: none;">
+    <textarea id="pertanyaan" rows="5" placeholder="Ketik pertanyaan Anda di sini..."></textarea>
+    <button class="btn" id="btnKirim" onclick="kirimPertanyaan()">💾 Kirim Pertanyaan</button>
+  </div>
+  
+  <div class="success-msg" id="successMsg">
+    ✅ Pertanyaan berhasil dikirim!<br><span style="font-size:0.85rem; font-weight:normal;">Terima kasih atas partisipasi Anda.</span>
+  </div>
+  
+  <div class="error-msg" id="errorMsg">
+    ❌ Gagal mengirim pertanyaan. Silakan coba lagi.
+  </div>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbzgCRTHKXhqXS20HmW9ioDoRE3qlObdqnivUS_V9934rRv0pOkGNGPRLGSPvwFyDntAmw/exec';
+
+let pesertaData = null;
+
+// 1. Ambil Kode dari URL (?kode=REG-XXXX)
+const urlParams = new URLSearchParams(window.location.search);
+const kodePeserta = urlParams.get('kode');
+
+if (!kodePeserta) {
+  document.getElementById('infoPeserta').innerHTML = '<p style="color:red;">Kode peserta tidak ditemukan di URL.</p>';
+} else {
+  loadPeserta(kodePeserta);
+}
+
+// 2. Ambil Data Peserta dari Spreadsheet berdasarkan Kode
+async function loadPeserta(kode) {
+  try {
+    // Gunakan parameter kode agar backend memfilter data
+    const res = await fetch(API_URL + '?kode=' + encodeURIComponent(kode) + '&t=' + Date.now());
+    const data = await res.json();
+    
+    // Cari data di dalam array peserta
+    const p = data.peserta.find(x => String(x.Kode).trim() === String(kode).trim());
+    
+    if (!p) throw new Error('Peserta tidak ditemukan');
+    
+    pesertaData = p;
+    
+    document.getElementById('infoPeserta').innerHTML = `
+      <p><span>${p.Nama}</span></p>
+      <p>${p.Jabatan} - ${p.Perusahaan}</p>
+    `;
+    document.getElementById('formArea').style.display = 'block';
+  } catch (err) {
+    document.getElementById('infoPeserta').innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
+  }
+}
+
+// 3. Kirim Pertanyaan ke Backend (via Iframe)
+async function kirimPertanyaan() {
+  const teksPertanyaan = document.getElementById('pertanyaan').value.trim();
+  if (!teksPertanyaan) { alert('Pertanyaan tidak boleh kosong!'); return; }
+  if (!pesertaData) { alert('Data peserta belum siap.'); return; }
+  
+  const btn = document.getElementById('btnKirim');
+  btn.disabled = true;
+  btn.textContent = '⏳ Mengirim...';
+  
+  const payload = {
+    action: 'submitQnA',
+    Kode: pesertaData.Kode,
+    Nama: pesertaData.Nama,
+    Pertanyaan: teksPertanyaan
+  };
+  
+  // Kirim via iframe tersembunyi
+  sendData(payload).then(() => {
+    document.getElementById('formArea').style.display = 'none';
+    document.getElementById('successMsg').style.display = 'block';
+  }).catch(() => {
+    document.getElementById('errorMsg').style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = '💾 Kirim Pertanyaan';
+  });
+}
+
+function sendData(payload) {
+  return new Promise((resolve) => {
+    const iframeName = 'hidden_iframe_' + Date.now();
+    const iframe = document.createElement('iframe');
+    iframe.name = iframeName; iframe.style.display = 'none';
+    const form = document.createElement('form');
+    form.method = 'POST'; form.action = API_URL; form.target = iframeName; form.style.display = 'none';
+    for (const key in payload) {
+      const input = document.createElement('input');
+      input.type = 'hidden'; input.name = key; input.value = payload[key];
+      form.appendChild(input);
+    }
+    document.body.appendChild(iframe); document.body.appendChild(form); form.submit();
+    setTimeout(() => { document.body.removeChild(form); document.body.removeChild(iframe); resolve(); }, 1500);
+  });
+}
+</script>
+</body>
+</html>
