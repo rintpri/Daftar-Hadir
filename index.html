@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daftar Hadir - Registrasi Barcode</title>
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<title>Daftar Hadir - Registrasi QR Code</title>
+<!-- Library untuk Generate QR Code -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- Library untuk Scan QR Code -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
@@ -52,7 +54,7 @@
   .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; justify-content: center; align-items: center; padding: 20px; }
   .modal.active { display: flex; }
   .modal-content { background: #fff; border-radius: 14px; padding: 28px; max-width: 380px; width: 100%; text-align: center; }
-  .modal-content svg { max-width: 100%; margin: 16px 0; }
+  .modal-content #qrcode { margin: 16px auto; display: flex; justify-content: center; }
   .modal-content .info { text-align: left; font-size: 0.9rem; margin-bottom: 16px; }
   .modal-content .info p { margin: 4px 0; }
   .modal-content .info span { font-weight: 700; color: #1d4ed8; }
@@ -127,7 +129,7 @@
           </div>
         </div>
         <div class="form-actions">
-          <button type="submit" id="btnSubmit" class="btn btn-primary">💾 Simpan & Generate Barcode</button>
+          <button type="submit" id="btnSubmit" class="btn btn-primary">💾 Simpan & Generate QR Code</button>
           <button type="reset" class="btn btn-warning">↺ Reset</button>
         </div>
       </form>
@@ -137,9 +139,9 @@
   <!-- TAB SCAN -->
   <div id="tab-scan" class="tab-content">
     <div class="card">
-      <h2>Scan Barcode Kehadiran</h2>
+      <h2>Scan QR Code Kehadiran</h2>
       <p style="margin-bottom:14px;color:#64748b;font-size:0.9rem;">
-        Arahkan barcode peserta ke kamera, atau ketik kode secara manual.
+        Arahkan QR Code peserta ke kamera, atau ketik kode secara manual.
       </p>
       <div class="form-actions" style="margin-bottom:16px;">
         <button class="btn btn-success" id="btnStartScan" onclick="startScanner()">📷 Mulai Kamera</button>
@@ -148,7 +150,7 @@
       <div id="reader"></div>
 
       <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
-        <input type="text" id="manualCode" placeholder="Ketik kode barcode manual..." style="flex:1; min-width:200px;">
+        <input type="text" id="manualCode" placeholder="Ketik kode QR manual..." style="flex:1; min-width:200px;">
         <button class="btn btn-primary" onclick="processManual()">✓ Proses</button>
       </div>
 
@@ -178,7 +180,7 @@
       </div>
 
       <div class="form-actions" style="margin-bottom:14px;">
-        <button class="btn btn-primary btn-sm" onclick="printAllBarcodes()">🖨️ Cetak Semua Barcode</button>
+        <button class="btn btn-primary btn-sm" onclick="printAllQrCodes()">🖨️ Cetak Semua QR</button>
         <button class="btn btn-success btn-sm" onclick="exportCSV()">📥 Export CSV</button>
         <button class="btn btn-success btn-sm" onclick="exportExcel()">📊 Export Excel</button>
         <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑️ Hapus Semua Data</button>
@@ -201,17 +203,17 @@
   </div>
 </div>
 
-<!-- MODAL BARCODE -->
-<div class="modal" id="modalBarcode">
+<!-- MODAL QR CODE -->
+<div class="modal" id="modalQr">
   <div class="modal-content">
     <h3 style="color:#1d4ed8;">🎫 Kartu Peserta</h3>
     <div id="printArea">
       <div class="info" id="modalInfo"></div>
-      <svg id="barcodeSvg"></svg>
-      <p style="font-size:0.75rem;color:#94a3b8;">Tunjukkan barcode ini saat registrasi kehadiran</p>
+      <div id="qrcode"></div>
+      <p style="font-size:0.75rem;color:#94a3b8;margin-top:10px;">Tunjukkan QR Code ini saat registrasi kehadiran</p>
     </div>
     <div class="form-actions" style="justify-content:center;margin-top:16px;">
-      <button class="btn btn-primary" onclick="printBarcode()">🖨️ Cetak</button>
+      <button class="btn btn-primary" onclick="printQr()">🖨️ Cetak</button>
       <button class="btn btn-danger" onclick="closeModal()">✕ Tutup</button>
     </div>
   </div>
@@ -270,7 +272,6 @@ function loadData(showToastNotif = false) {
   return new Promise((resolve) => {
     const callbackName = 'jsonpCb_' + Math.round(100000 * Math.random());
     
-    // Buat fungsi global sementara untuk menerima data
     window[callbackName] = function(data) {
       try {
         if (!Array.isArray(data)) throw new Error(data.error || 'Format salah');
@@ -299,7 +300,6 @@ function loadData(showToastNotif = false) {
       }
     };
 
-    // Suntikkan tag <script> ke halaman (Bypass CORS)
     const script = document.createElement('script');
     script.src = API_URL + '?callback=' + callbackName + '&t=' + Date.now();
     
@@ -316,7 +316,6 @@ function loadData(showToastNotif = false) {
 }
 
 /* ================= KIRIM DATA (POST NO-CORS) ================= */
-// Karena Google Script memblokir CORS untuk POST, kita tembak pakai no-cors
 function sendData(payload) {
   const formData = new URLSearchParams();
   for (const key in payload) formData.append(key, payload[key]);
@@ -353,29 +352,42 @@ document.getElementById('formRegistrasi').addEventListener('submit', async funct
     await sendData(data);
     this.reset();
     showToast('Tersimpan!', 'success');
-    showBarcodeModal(data);
+    showQrModal(data);
     
-    // Beri jeda 1 detik agar Google Sheets selesai memproses, lalu refresh
     setTimeout(() => loadData(), 1000); 
   } catch (err) {
     showToast('Gagal menyimpan (Periksa koneksi)', 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = '💾 Simpan & Generate Barcode';
+    btn.textContent = '💾 Simpan & Generate QR Code';
   }
 });
 
-/* ================= MODAL ================= */
-function showBarcodeModal(p) {
+/* ================= MODAL QR CODE ================= */
+function showQrModal(p) {
   document.getElementById('modalInfo').innerHTML = `
     <p><span>${p.nama || p.Nama}</span></p>
     <p>${p.jabatan || p.Jabatan} - ${p.perusahaan || p.Perusahaan}</p>
   `;
-  JsBarcode("#barcodeSvg", p.kode || p.Kode, { format: "CODE128", width: 2, height: 80, displayValue: true, fontSize: 14, margin: 10 });
-  document.getElementById('modalBarcode').classList.add('active');
+  
+  // Bersihkan QR Code lama (jika ada)
+  const qrContainer = document.getElementById('qrcode');
+  qrContainer.innerHTML = '';
+  
+  // Generate QR Code baru
+  new QRCode(qrContainer, {
+    text: p.kode || p.Kode,
+    width: 180,
+    height: 180,
+    colorDark : "#0f172a",
+    colorLight : "#ffffff",
+    correctLevel : QRCode.CorrectLevel.H
+  });
+  
+  document.getElementById('modalQr').classList.add('active');
 }
-function closeModal() { document.getElementById('modalBarcode').classList.remove('active'); }
-function printBarcode() { window.print(); }
+function closeModal() { document.getElementById('modalQr').classList.remove('active'); }
+function printQr() { window.print(); }
 
 /* ================= RENDER TABLE ================= */
 function getFiltered() {
@@ -416,16 +428,16 @@ function renderTable() {
       <td>${p.email}</td>
       <td>${p.hadir ? `<span class="badge badge-hadir">✓ Hadir</span>` : `<span class="badge badge-belum">Belum</span>`}</td>
       <td>
-        <button class="btn btn-primary btn-sm" onclick="viewBarcode('${p.kode}')">🎫</button>
+        <button class="btn btn-primary btn-sm" onclick="viewQr('${p.kode}')">🎫</button>
         <button class="btn btn-danger btn-sm" onclick="hapusPeserta('${p.kode}')">🗑️</button>
       </td>
     </tr>
   `).join('');
 }
 
-function viewBarcode(kode) {
+function viewQr(kode) {
   const p = peserta.find(x => x.kode === kode);
-  if (p) showBarcodeModal(p);
+  if (p) showQrModal(p);
 }
 
 async function hapusPeserta(kode) {
@@ -451,7 +463,7 @@ function startScanner() {
     if (!cameras || cameras.length === 0) { showToast('Kamera tidak ditemukan', 'error'); return; }
     html5QrCode.start(
       { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 280, height: 180 } },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
       (decodedText) => {
         if (Date.now() - lastScanTime < 2500) return;
         lastScanTime = Date.now();
@@ -542,13 +554,33 @@ function exportExcel() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `daftar-hadir.xls`; a.click();
 }
 
-function printAllBarcodes() {
+function printAllQrCodes() {
   if (peserta.length === 0) return;
   const win = window.open('', '_blank');
-  let html = `<html><head><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"><\/script><style>body{font-family:Arial;padding:20px;} .kartu{display:inline-block;width:280px;border:1px dashed #999;padding:12px;margin:6px;text-align:center;page-break-inside:avoid;} svg{max-width:100%;}</style></head><body>`;
-  peserta.forEach(p => { html += `<div class="kartu"><h4>${p.nama}</h4><p>${p.jabatan} - ${p.perusahaan}</p><svg class="bc" data-code="${p.kode}"></svg></div>`; });
-  html += `<script>document.querySelectorAll('.bc').forEach(svg => JsBarcode(svg, svg.dataset.code, {format:'CODE128',width:1.6,height:50,fontSize:12})); setTimeout(()=>window.print(), 600);<\/script></body></html>`;
-  win.document.write(html); win.document.close();
+  let html = `<html><head><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><style>body{font-family:Arial;padding:20px;} .kartu{display:inline-block;width:220px;border:1px dashed #999;padding:15px;margin:10px;text-align:center;page-break-inside:avoid;vertical-align:top;} h4{margin:5px 0;font-size:14px;} p{margin:2px 0;font-size:11px;color:#555;} .qr-container{display:flex;justify-content:center;margin-top:8px;}</style></head><body>`;
+  
+  peserta.forEach(p => {
+    html += `<div class="kartu">
+      <h4>${p.nama}</h4>
+      <p>${p.jabatan} - ${p.perusahaan}</p>
+      <div class="qr-container qr" data-code="${p.kode}"></div>
+    </div>`;
+  });
+  
+  html += `<script>
+    document.querySelectorAll('.qr').forEach(div => {
+      new QRCode(div, {
+        text: div.dataset.code,
+        width: 120,
+        height: 120,
+        correctLevel : QRCode.CorrectLevel.H
+      });
+    });
+    setTimeout(()=>window.print(), 800);
+  <\/script></body></html>`;
+  
+  win.document.write(html); 
+  win.document.close();
 }
 
 /* ================= INIT ================= */
