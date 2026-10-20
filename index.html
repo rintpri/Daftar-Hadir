@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daftar Hadir - Registrasi QR Code & Form Pertanyaan</title>
+<title>Daftar Hadir - Registrasi QR Code & Pengaturan Meja</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
   body { background: #f0f4f8; color: #1e293b; padding: 20px; }
   
-  /* CSS ADMIN */
   .container { max-width: 1200px; margin: 0 auto; display: none; }
   .container.active { display: block; }
   h1 { text-align: center; color: #0f172a; margin-bottom: 20px; }
@@ -38,7 +37,7 @@
 
   #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 12px; overflow: hidden; display: none; }
   #reader.active { display: block; }
-  .scan-result { margin-top: 16px; padding: 16px; border-radius: 10px; text-align: center; font-weight: 600; display: none; }
+  .scan-result { margin-top: 16px; padding: 16px; border-radius: 10px; text-align: center; font-weight: 600; display: none; font-size: 1.1rem; }
   .scan-result.success { display: block; background: #dcfce7; color: #15803d; border: 2px solid #16a34a; }
   .scan-result.error { display: block; background: #fee2e2; color: #b91c1c; border: 2px solid #dc2626; }
   .scan-result.warn { display: block; background: #fef3c7; color: #b45309; border: 2px solid #f59e0b; }
@@ -56,8 +55,8 @@
   .modal.active { display: flex; }
   .modal-content { background: #fff; border-radius: 14px; padding: 28px; max-width: 480px; width: 100%; text-align: center; }
   .modal-content img { margin: 16px auto; display: block; max-width: 100%; }
-  .modal-content .info { text-align: left; font-size: 0.9rem; margin-bottom: 16px; }
-  .modal-content .info p { margin: 4px 0; }
+  .modal-content .info { text-align: left; font-size: 0.95rem; margin-bottom: 16px; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0; }
+  .modal-content .info p { margin: 6px 0; }
   .modal-content .info span { font-weight: 700; color: #1d4ed8; }
 
   .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -85,24 +84,17 @@
   .conn-offline { background: #fee2e2; color: #b91c1c; }
   .conn-loading { background: #e0e7ff; color: #3730a3; }
 
-  /* CSS HALAMAN PESERTA (FORM) */
   #peserta-page { display: none; justify-content: center; align-items: center; min-height: 90vh; }
   #peserta-page.active { display: flex; }
   .form-container { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); max-width: 500px; width: 100%; }
   .form-container h2 { color: #1d4ed8; text-align: center; margin-bottom: 10px; }
   .form-container p.subtitle { text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 20px; }
-  .info-box { background: #e0e7ff; border-radius: 8px; padding: 14px; margin-bottom: 20px; font-size: 0.9rem; }
-  .info-box p { margin-bottom: 4px; }
-  .info-box span { font-weight: bold; color: #1d4ed8; }
   .success-msg { display: none; text-align: center; color: #15803d; font-weight: bold; margin-top: 20px; padding: 16px; background: #dcfce7; border-radius: 8px; }
   .error-msg { display: none; text-align: center; color: #b91c1c; font-weight: bold; margin-top: 20px; padding: 16px; background: #fee2e2; border-radius: 8px; }
 </style>
 </head>
 <body>
 
-<!-- ========================================== -->
-<!-- HALAMAN 1: ADMIN -->
-<!-- ========================================== -->
 <div class="container active" id="admin-page">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap;">
     <h1 style="margin:0;">📋 Daftar Hadir <span id="connStatus" class="conn-status conn-loading">Menghubungkan…</span></h1>
@@ -116,7 +108,6 @@
     <button class="tab-btn" id="tab-btn-rekap" onclick="requestAdmin('rekap', this)">📑 Rekap Pertanyaan</button>
   </div>
 
-  <!-- TAB REGISTRASI -->
   <div id="tab-registrasi" class="tab-content active">
     <div class="card">
       <h2>Formulir Pendaftaran Peserta</h2>
@@ -136,7 +127,6 @@
     </div>
   </div>
 
-  <!-- TAB SCAN -->
   <div id="tab-scan" class="tab-content">
     <div class="card">
       <h2>Scan QR Code Kehadiran</h2>
@@ -153,7 +143,6 @@
     </div>
   </div>
 
-  <!-- TAB DATA PESERTA -->
   <div id="tab-data" class="tab-content">
     <div class="card">
       <h2>Data Peserta</h2>
@@ -188,7 +177,6 @@
     </div>
   </div>
 
-  <!-- TAB REKAP PERTANYAAN -->
   <div id="tab-rekap" class="tab-content">
     <div class="card">
       <h2>Rekap Pertanyaan Peserta</h2>
@@ -213,9 +201,6 @@
 
 </div>
 
-<!-- ========================================== -->
-<!-- HALAMAN 2: FORM PESERTA -->
-<!-- ========================================== -->
 <div id="peserta-page">
   <div class="form-container">
     <h2>❓ Form Pertanyaan Cukai</h2>
@@ -240,7 +225,6 @@
   </div>
 </div>
 
-<!-- MODAL LOGIN ADMIN -->
 <div class="modal" id="modalLogin">
   <div class="modal-content">
     <h3 style="color:#1d4ed8; margin-bottom:16px;">🔒 Login Admin</h3>
@@ -252,7 +236,6 @@
   </div>
 </div>
 
-<!-- MODAL QR CODE KARTU -->
 <div class="modal" id="modalQr">
   <div class="modal-content">
     <h3 style="color:#1d4ed8;">🎫 Kartu Peserta</h3>
@@ -268,10 +251,9 @@
   </div>
 </div>
 
-<!-- MODAL QR FORM PERTANYAAN -->
 <div class="modal" id="modalQrForm">
   <div class="modal-content">
-    <h3 style="color:#1d4ed8;">❓ QR Form Pertanyaan</h3>
+    <h3 style="color:#1d4ed8;">🎫 Kartu Peserta & Meja</h3>
     <div id="printAreaForm">
       <div class="info" id="modalInfoForm"></div>
       <div id="qrcodeFormContainer"></div>
@@ -289,9 +271,6 @@
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbzgCRTHKXhqXS20HmW9ioDoRE3qlObdqnivUS_V9934rRv0pOkGNGPRLGSPvwFyDntAmw/exec';
 
-/* ==========================================
-   LOGIKA ROUTING (ADMIN vs PESERTA)
-   ========================================== */
 const urlParams = new URLSearchParams(window.location.search);
 const kodePesertaFromUrl = urlParams.get('kode');
 
@@ -301,11 +280,7 @@ if (kodePesertaFromUrl) {
   loadPesertaForm(kodePesertaFromUrl);
 }
 
-/* ==========================================
-   LOGIKA FORM PESERTA (HALAMAN KEDUA)
-   ========================================== */
 let pesertaFormData = null;
-
 async function loadPesertaForm(kode) {
   try {
     const res = await fetch(API_URL + '?t=' + Date.now(), { method: 'GET' });
@@ -314,9 +289,20 @@ async function loadPesertaForm(kode) {
     const p = dataPeserta.find(x => String(x.Kode).trim() === String(kode).trim());
     
     if (!p) throw new Error('Peserta tidak ditemukan');
-    
     pesertaFormData = p;
-    document.getElementById('infoPeserta').innerHTML = `<p><span>${p.Nama}</span></p><p>${p.Jabatan} - ${p.Perusahaan}</p>`;
+    
+    // Cari nomor meja
+    let nomorMeja = "-";
+    if (data.meja) {
+      const mejaMatch = data.meja.find(m => String(m.NamaPerusahaan).toLowerCase() === String(p.Perusahaan).toLowerCase());
+      if (mejaMatch) nomorMeja = mejaMatch.NomorMeja;
+    }
+
+    document.getElementById('infoPeserta').innerHTML = `
+      <p><span>${p.Nama}</span></p>
+      <p>${p.Jabatan} - ${p.Perusahaan}</p>
+      <p style="margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1;"><strong>Meja: ${nomorMeja}</strong></p>
+    `;
     document.getElementById('formArea').style.display = 'block';
   } catch (err) {
     document.getElementById('infoPeserta').innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
@@ -338,11 +324,9 @@ async function kirimPertanyaan() {
   document.getElementById('successMsg').style.display = 'block';
 }
 
-/* ==========================================
-   LOGIKA ADMIN (HALAMAN PERTAMA)
-   ========================================== */
 let peserta = [];
-let qnaList = []; // Menyimpan data rekap pertanyaan
+let qnaList = [];
+let mejaList = []; // Menyimpan data meja
 let html5QrCode = null;
 let scanning = false;
 let lastScanTime = 0;
@@ -418,17 +402,16 @@ async function loadData(showToastNotif = false) {
       waktuHadir: row.WaktuHadir || null
     }));
 
-    // Ambil data QnA
     qnaList = (data.qna || []).map(row => ({
-      waktu: row.Waktu || '',
-      kode: row.Kode || '',
-      nama: row.Nama || '',
-      pertanyaan: row.Pertanyaan || ''
+      waktu: row.Waktu || '', kode: row.Kode || '', nama: row.Nama || '', pertanyaan: row.Pertanyaan || ''
     }));
+
+    // Simpan data meja
+    mejaList = data.meja || [];
     
     setConn('online');
     if (isAdmin) { renderTable(); renderTableQna(); }
-    if (showToastNotif) showToast('Data dimuat: ' + peserta.length + ' peserta, ' + qnaList.length + ' pertanyaan', 'success');
+    if (showToastNotif) showToast('Data dimuat: ' + peserta.length + ' peserta', 'success');
   } catch (err) {
     console.error(err); setConn('offline'); showToast('Gagal memuat: ' + err.message, 'error');
   }
@@ -480,17 +463,29 @@ function showQrModal(p) {
 }
 function printQr() { window.print(); }
 
+// FUNGSI BARU: Tampilkan QR Form beserta Nomor Meja
 function showQrFormModal(p) {
-  document.getElementById('modalInfoForm').innerHTML = `<p><span>${p.nama}</span></p><p>Silakan pindai QR Code di bawah ini untuk mengajukan pertanyaan.</p>`;
+  let nomorMeja = "-";
+  if (mejaList) {
+    const mejaMatch = mejaList.find(m => String(m.NamaPerusahaan).toLowerCase() === String(p.perusahaan).toLowerCase());
+    if (mejaMatch) nomorMeja = mejaMatch.NomorMeja;
+  }
+
+  document.getElementById('modalInfoForm').innerHTML = `
+    <p><span>${p.nama}</span></p>
+    <p>${p.jabatan} - ${p.perusahaan}</p>
+    <p style="margin-top:10px; font-size:1.2rem; color:#16a34a;"><strong>Meja: ${nomorMeja}</strong></p>
+  `;
+
   const qrContainer = document.getElementById('qrcodeFormContainer'); qrContainer.innerHTML = '';
   const baseUrl = window.location.href.split('?')[0];
   const formUrl = baseUrl + '?kode=' + encodeURIComponent(p.kode);
   const qr = qrcode(0, 'H'); qr.addData(formUrl); qr.make();
   qrContainer.innerHTML = qr.createImgTag(5, 10);
+  
   document.getElementById('modalQrForm').classList.add('active');
 }
 
-/* ================= RENDER TABEL PESERTA ================= */
 function getFiltered() {
   const q = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
   const status = document.getElementById('filterStatus')?.value || 'all';
@@ -516,7 +511,7 @@ function renderTable() {
       <td>${p.hadir ? `<span class="badge badge-hadir">✓ Hadir</span>` : `<span class="badge badge-belum">Belum</span>`}</td>
       <td>
         <button class="btn btn-primary btn-sm" onclick="viewQr('${p.kode}')" title="Kartu QR">🎫</button>
-        ${p.hadir ? `<button class="btn btn-warning btn-sm" onclick="viewQrForm('${p.kode}')" title="QR Form Pertanyaan">❓ Form QnA</button>` : ''}
+        ${p.hadir ? `<button class="btn btn-warning btn-sm" onclick="viewQrForm('${p.kode}')" title="QR Form & Meja">❓ Form & Meja</button>` : ''}
         <button class="btn btn-danger btn-sm" onclick="hapusPeserta('${p.kode}')" title="Hapus">🗑️</button>
       </td>
     </tr>
@@ -537,32 +532,19 @@ async function clearAll() {
   await loadData();
 }
 
-/* ================= RENDER TABEL REKAP PERTANYAAN ================= */
 function renderTableQna() {
   const tbody = document.getElementById('tbodyQna');
   const q = (document.getElementById('searchQna')?.value || '').toLowerCase().trim();
-  
-  const list = qnaList.filter(item => 
-    !q || [item.nama, item.pertanyaan, item.kode].some(v => String(v).toLowerCase().includes(q))
-  );
-
-  if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:#94a3b8;">Belum ada pertanyaan yang diajukan</td></tr>';
-    return;
-  }
-
+  const list = qnaList.filter(item => !q || [item.nama, item.pertanyaan, item.kode].some(v => String(v).toLowerCase().includes(q)));
+  if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:#94a3b8;">Belum ada pertanyaan</td></tr>'; return; }
   tbody.innerHTML = list.map((item, i) => `
     <tr>
-      <td>${i+1}</td>
-      <td>${item.waktu}</td>
-      <td><code>${item.kode}</code></td>
-      <td>${item.nama}</td>
+      <td>${i+1}</td><td>${item.waktu}</td><td><code>${item.kode}</code></td><td>${item.nama}</td>
       <td style="white-space: pre-wrap;">${item.pertanyaan}</td>
     </tr>
   `).join('');
 }
 
-/* ================= SCANNER ================= */
 function startScanner() {
   if (scanning) return;
   document.getElementById('reader').classList.add('active');
@@ -610,8 +592,13 @@ async function processCode(code) {
   const waktu = new Date().toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
   await sendData({ action: 'updateHadir', kode: code, waktuHadir: waktu, password: adminPassword });
   
+  // Cari Nomor Meja untuk hasil scan
+  let nomorMeja = "-";
+  const mejaMatch = mejaList.find(m => String(m.NamaPerusahaan).toLowerCase() === String(local.perusahaan).toLowerCase());
+  if (mejaMatch) nomorMeja = mejaMatch.NomorMeja;
+
   resultEl.classList.add('success');
-  resultEl.innerHTML = `✅ Selamat datang, <b>${local.nama}</b>!<br><small>Kehadiran Tercatat.</small>`;
+  resultEl.innerHTML = `✅ Selamat datang, <b>${local.nama}</b>!<br><span style="font-size:1.5rem; color:#1d4ed8;">Meja: ${nomorMeja}</span>`;
   
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -627,7 +614,6 @@ async function processCode(code) {
   if (updatedPeserta) showQrFormModal(updatedPeserta);
 }
 
-/* ================= EXPORT & PRINT ================= */
 function exportCSV() {
   const list = getFiltered();
   if (list.length === 0) return;
@@ -651,15 +637,13 @@ function printQna() {
   if (qnaList.length === 0) return;
   const win = window.open('', '_blank');
   let html = `<html><head><title>Rekap Pertanyaan</title><style>body{font-family:Arial;padding:20px;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #999;padding:8px;font-size:12px;text-align:left;} th{background:#f1f5f9;}</style></head><body>
-    <h2>Rekap Pertanyaan Sosialisasi Cukai</h2>
-    <p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+    <h2>Rekap Pertanyaan Sosialisasi Cukai</h2><p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
     <table><thead><tr><th>No</th><th>Waktu</th><th>Kode</th><th>Nama</th><th>Pertanyaan</th></tr></thead><tbody>`;
   qnaList.forEach((item, i) => {
     html += `<tr><td>${i+1}</td><td>${item.waktu}</td><td>${item.kode}</td><td>${item.nama}</td><td>${item.pertanyaan}</td></tr>`;
   });
   html += `</tbody></table></body></html>`;
-  win.document.write(html); win.document.close();
-  setTimeout(() => win.print(), 500);
+  win.document.write(html); win.document.close(); setTimeout(() => win.print(), 500);
 }
 
 function printAllQrCodes() {
@@ -679,7 +663,6 @@ function printAllQrCodes() {
   win.document.write(html); win.document.close();
 }
 
-/* ================= INIT ================= */
 if (!kodePesertaFromUrl) { loadData(); }
 </script>
 </body>
