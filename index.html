@@ -101,7 +101,7 @@
 <body>
 
 <!-- ========================================== -->
-<!-- HALAMAN 1: ADMIN (TAMPIL JIKA TIDAK ADA PARAMETER ?kode=) -->
+<!-- HALAMAN 1: ADMIN -->
 <!-- ========================================== -->
 <div class="container active" id="admin-page">
   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap;">
@@ -111,8 +111,9 @@
 
   <div class="tabs">
     <button class="tab-btn active" id="tab-btn-registrasi" onclick="switchTab('registrasi', this)">📝 Registrasi Peserta</button>
-    <button class="tab-btn" id="tab-btn-scan" onclick="requestAdmin('scan', this)">📷 Scan Kehadiran (Admin)</button>
-    <button class="tab-btn" id="tab-btn-data" onclick="requestAdmin('data', this)">📊 Data Peserta (Admin)</button>
+    <button class="tab-btn" id="tab-btn-scan" onclick="requestAdmin('scan', this)">📷 Scan Kehadiran</button>
+    <button class="tab-btn" id="tab-btn-data" onclick="requestAdmin('data', this)">📊 Data Peserta</button>
+    <button class="tab-btn" id="tab-btn-rekap" onclick="requestAdmin('rekap', this)">📑 Rekap Pertanyaan</button>
   </div>
 
   <!-- TAB REGISTRASI -->
@@ -152,7 +153,7 @@
     </div>
   </div>
 
-  <!-- TAB DATA -->
+  <!-- TAB DATA PESERTA -->
   <div id="tab-data" class="tab-content">
     <div class="card">
       <h2>Data Peserta</h2>
@@ -173,7 +174,7 @@
       </div>
       <div class="form-actions" style="margin-bottom:14px;">
         <button class="btn btn-primary btn-sm" onclick="printAllQrCodes()">🖨️ Cetak Semua QR</button>
-        <button class="btn btn-success btn-sm" onclick="exportCSV()">📥 Export CSV</button>
+        <button class="btn btn-success btn-sm" onclick="exportCSV()">📥 Export CSV Peserta</button>
         <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑️ Hapus Semua Data</button>
       </div>
       <div class="table-wrap">
@@ -186,10 +187,34 @@
       </div>
     </div>
   </div>
+
+  <!-- TAB REKAP PERTANYAAN -->
+  <div id="tab-rekap" class="tab-content">
+    <div class="card">
+      <h2>Rekap Pertanyaan Peserta</h2>
+      <div class="filter-bar">
+        <input type="text" id="searchQna" placeholder="🔍 Cari nama / pertanyaan..." oninput="renderTableQna()">
+        <button class="btn btn-primary btn-sm" onclick="loadData(true)">🔄 Refresh</button>
+      </div>
+      <div class="form-actions" style="margin-bottom:14px;">
+        <button class="btn btn-success btn-sm" onclick="exportCSVQna()">📥 Export CSV Pertanyaan</button>
+        <button class="btn btn-secondary btn-sm" onclick="printQna()">🖨️ Cetak Rekap</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>No</th><th>Waktu Submit</th><th>Kode Peserta</th><th>Nama Peserta</th><th>Pertanyaan</th></tr>
+          </thead>
+          <tbody id="tbodyQna"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ========================================== -->
-<!-- HALAMAN 2: FORM PESERTA (TAMPIL JIKA ADA PARAMETER ?kode=) -->
+<!-- HALAMAN 2: FORM PESERTA -->
 <!-- ========================================== -->
 <div id="peserta-page">
   <div class="form-container">
@@ -271,7 +296,6 @@ const urlParams = new URLSearchParams(window.location.search);
 const kodePesertaFromUrl = urlParams.get('kode');
 
 if (kodePesertaFromUrl) {
-  // Jika ada ?kode=..., tampilkan halaman form peserta
   document.getElementById('admin-page').classList.remove('active');
   document.getElementById('peserta-page').classList.add('active');
   loadPesertaForm(kodePesertaFromUrl);
@@ -286,19 +310,13 @@ async function loadPesertaForm(kode) {
   try {
     const res = await fetch(API_URL + '?t=' + Date.now(), { method: 'GET' });
     const data = await res.json();
-    
-    // Cari peserta berdasarkan kode dari URL
     const dataPeserta = data.peserta || data;
     const p = dataPeserta.find(x => String(x.Kode).trim() === String(kode).trim());
     
     if (!p) throw new Error('Peserta tidak ditemukan');
     
     pesertaFormData = p;
-    
-    document.getElementById('infoPeserta').innerHTML = `
-      <p><span>${p.Nama}</span></p>
-      <p>${p.Jabatan} - ${p.Perusahaan}</p>
-    `;
+    document.getElementById('infoPeserta').innerHTML = `<p><span>${p.Nama}</span></p><p>${p.Jabatan} - ${p.Perusahaan}</p>`;
     document.getElementById('formArea').style.display = 'block';
   } catch (err) {
     document.getElementById('infoPeserta').innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
@@ -311,16 +329,9 @@ async function kirimPertanyaan() {
   if (!pesertaFormData) { alert('Data peserta belum siap.'); return; }
   
   const btn = document.getElementById('btnKirim');
-  btn.disabled = true;
-  btn.textContent = '⏳ Mengirim...';
+  btn.disabled = true; btn.textContent = '⏳ Mengirim...';
   
-  const payload = {
-    action: 'submitQnA',
-    Kode: pesertaFormData.Kode,
-    Nama: pesertaFormData.Nama,
-    Pertanyaan: teksPertanyaan
-  };
-  
+  const payload = { action: 'submitQnA', Kode: pesertaFormData.Kode, Nama: pesertaFormData.Nama, Pertanyaan: teksPertanyaan };
   await sendData(payload);
   
   document.getElementById('formArea').style.display = 'none';
@@ -331,6 +342,7 @@ async function kirimPertanyaan() {
    LOGIKA ADMIN (HALAMAN PERTAMA)
    ========================================== */
 let peserta = [];
+let qnaList = []; // Menyimpan data rekap pertanyaan
 let html5QrCode = null;
 let scanning = false;
 let lastScanTime = 0;
@@ -341,8 +353,7 @@ let pendingTab = null, pendingBtn = null;
 
 function showToast(msg, type = 'info') {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show ' + type;
+  t.textContent = msg; t.className = 'toast show ' + type;
   clearTimeout(t._timer);
   t._timer = setTimeout(() => { t.className = 'toast ' + type; }, 3000);
 }
@@ -377,12 +388,14 @@ function logoutAdmin() {
 }
 
 function switchTab(name, btn) {
-  if ((name === 'scan' || name === 'data') && !isAdmin) { requestAdmin(name, btn); return; }
+  if ((name === 'scan' || name === 'data' || name === 'rekap') && !isAdmin) { requestAdmin(name, btn); return; }
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   if(btn) btn.classList.add('active');
+  
   if (name === 'data') renderTable();
+  if (name === 'rekap') renderTableQna();
   if (name !== 'scan') stopScanner();
 }
 
@@ -404,10 +417,18 @@ async function loadData(showToastNotif = false) {
       hadir: row.Hadir === true || String(row.Hadir).toUpperCase() === 'TRUE',
       waktuHadir: row.WaktuHadir || null
     }));
+
+    // Ambil data QnA
+    qnaList = (data.qna || []).map(row => ({
+      waktu: row.Waktu || '',
+      kode: row.Kode || '',
+      nama: row.Nama || '',
+      pertanyaan: row.Pertanyaan || ''
+    }));
     
     setConn('online');
-    if (isAdmin) renderTable();
-    if (showToastNotif) showToast('Data dimuat: ' + peserta.length + ' peserta', 'success');
+    if (isAdmin) { renderTable(); renderTableQna(); }
+    if (showToastNotif) showToast('Data dimuat: ' + peserta.length + ' peserta, ' + qnaList.length + ' pertanyaan', 'success');
   } catch (err) {
     console.error(err); setConn('offline'); showToast('Gagal memuat: ' + err.message, 'error');
   }
@@ -462,16 +483,14 @@ function printQr() { window.print(); }
 function showQrFormModal(p) {
   document.getElementById('modalInfoForm').innerHTML = `<p><span>${p.nama}</span></p><p>Silakan pindai QR Code di bawah ini untuk mengajukan pertanyaan.</p>`;
   const qrContainer = document.getElementById('qrcodeFormContainer'); qrContainer.innerHTML = '';
-  
-  // Ambil URL halaman saat ini (index.html) tanpa parameter
   const baseUrl = window.location.href.split('?')[0];
   const formUrl = baseUrl + '?kode=' + encodeURIComponent(p.kode);
-  
   const qr = qrcode(0, 'H'); qr.addData(formUrl); qr.make();
   qrContainer.innerHTML = qr.createImgTag(5, 10);
   document.getElementById('modalQrForm').classList.add('active');
 }
 
+/* ================= RENDER TABEL PESERTA ================= */
 function getFiltered() {
   const q = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
   const status = document.getElementById('filterStatus')?.value || 'all';
@@ -489,10 +508,7 @@ function renderTable() {
   document.getElementById('statHadir').textContent = peserta.filter(p => p.hadir).length;
   document.getElementById('statBelum').textContent = peserta.length - peserta.filter(p => p.hadir).length;
   const list = getFiltered();
-  if (list.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:#94a3b8;">Tidak ada data</td></tr>';
-    return;
-  }
+  if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:#94a3b8;">Tidak ada data</td></tr>'; return; }
   tbody.innerHTML = list.map((p, i) => `
     <tr>
       <td>${i+1}</td><td><code>${p.kode}</code></td><td>${p.nama}</td>
@@ -515,13 +531,38 @@ async function hapusPeserta(kode) {
   await sendData({ action: 'delete', kode: kode, password: adminPassword });
   await loadData();
 }
-
 async function clearAll() {
   if (!confirm('Hapus SEMUA data?')) return;
   for (const p of peserta) { await sendData({ action: 'delete', kode: p.kode, password: adminPassword }); }
   await loadData();
 }
 
+/* ================= RENDER TABEL REKAP PERTANYAAN ================= */
+function renderTableQna() {
+  const tbody = document.getElementById('tbodyQna');
+  const q = (document.getElementById('searchQna')?.value || '').toLowerCase().trim();
+  
+  const list = qnaList.filter(item => 
+    !q || [item.nama, item.pertanyaan, item.kode].some(v => String(v).toLowerCase().includes(q))
+  );
+
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:#94a3b8;">Belum ada pertanyaan yang diajukan</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map((item, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${item.waktu}</td>
+      <td><code>${item.kode}</code></td>
+      <td>${item.nama}</td>
+      <td style="white-space: pre-wrap;">${item.pertanyaan}</td>
+    </tr>
+  `).join('');
+}
+
+/* ================= SCANNER ================= */
 function startScanner() {
   if (scanning) return;
   document.getElementById('reader').classList.add('active');
@@ -532,8 +573,7 @@ function startScanner() {
       { facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
       (decodedText) => {
         if (Date.now() - lastScanTime < 2500) return;
-        lastScanTime = Date.now();
-        processCode(decodedText);
+        lastScanTime = Date.now(); processCode(decodedText);
       }, () => {}
     ).then(() => {
       scanning = true;
@@ -556,8 +596,7 @@ function stopScanner() {
 function processManual() {
   const code = document.getElementById('manualCode').value.trim();
   if (!code) return;
-  processCode(code);
-  document.getElementById('manualCode').value = '';
+  processCode(code); document.getElementById('manualCode').value = '';
 }
 
 async function processCode(code) {
@@ -588,6 +627,7 @@ async function processCode(code) {
   if (updatedPeserta) showQrFormModal(updatedPeserta);
 }
 
+/* ================= EXPORT & PRINT ================= */
 function exportCSV() {
   const list = getFiltered();
   if (list.length === 0) return;
@@ -596,6 +636,30 @@ function exportCSV() {
   const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `daftar-hadir.csv`; a.click();
+}
+
+function exportCSVQna() {
+  if (qnaList.length === 0) return;
+  const headers = ['No', 'Waktu Submit', 'Kode Peserta', 'Nama Peserta', 'Pertanyaan'];
+  const rows = qnaList.map((item, i) => [i+1, item.waktu, item.kode, item.nama, item.pertanyaan]);
+  const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `rekap-pertanyaan.csv`; a.click();
+}
+
+function printQna() {
+  if (qnaList.length === 0) return;
+  const win = window.open('', '_blank');
+  let html = `<html><head><title>Rekap Pertanyaan</title><style>body{font-family:Arial;padding:20px;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #999;padding:8px;font-size:12px;text-align:left;} th{background:#f1f5f9;}</style></head><body>
+    <h2>Rekap Pertanyaan Sosialisasi Cukai</h2>
+    <p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+    <table><thead><tr><th>No</th><th>Waktu</th><th>Kode</th><th>Nama</th><th>Pertanyaan</th></tr></thead><tbody>`;
+  qnaList.forEach((item, i) => {
+    html += `<tr><td>${i+1}</td><td>${item.waktu}</td><td>${item.kode}</td><td>${item.nama}</td><td>${item.pertanyaan}</td></tr>`;
+  });
+  html += `</tbody></table></body></html>`;
+  win.document.write(html); win.document.close();
+  setTimeout(() => win.print(), 500);
 }
 
 function printAllQrCodes() {
@@ -616,10 +680,7 @@ function printAllQrCodes() {
 }
 
 /* ================= INIT ================= */
-// Hanya jalankan loadData jika sedang di halaman admin (tidak ada parameter kode)
-if (!kodePesertaFromUrl) {
-  loadData();
-}
+if (!kodePesertaFromUrl) { loadData(); }
 </script>
 </body>
 </html>
