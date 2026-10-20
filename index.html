@@ -199,7 +199,8 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>No</th><th>Waktu Submit</th><th>Kode Peserta</th><th>Nama Peserta</th><th>Pertanyaan</th></tr>
+            <!-- KOLOM DIUBAH: Kode Peserta menjadi Nama Perusahaan -->
+            <tr><th>No</th><th>Waktu Submit</th><th>Nama Perusahaan</th><th>Nama Peserta</th><th>Pertanyaan</th></tr>
           </thead>
           <tbody id="tbodyQna"></tbody>
         </table>
@@ -430,14 +431,10 @@ function updateDropdownPerusahaan() {
   const select = document.getElementById('perusahaan');
   if (!select) return;
   
-  // Simpan nilai yang sedang dipilih (jika ada)
   const currentVal = select.value;
-  
   select.innerHTML = '<option value="">-- Pilih Perusahaan --</option>';
   
-  // Ambil daftar perusahaan unik dari mejaList
   const uniqueCompanies = [...new Set(mejaList.map(m => m.NamaPerusahaan))];
-  
   uniqueCompanies.sort().forEach(pt => {
     const option = document.createElement('option');
     option.value = pt;
@@ -445,7 +442,6 @@ function updateDropdownPerusahaan() {
     select.appendChild(option);
   });
   
-  // Kembalikan nilai yang tadi dipilih (jika masih ada di list)
   if (currentVal && uniqueCompanies.includes(currentVal)) {
     select.value = currentVal;
   }
@@ -567,17 +563,36 @@ async function clearAll() {
   await loadData();
 }
 
+/* ================= REKAP PERTANYAAN (DIUPDATE) ================= */
 function renderTableQna() {
   const tbody = document.getElementById('tbodyQna');
   const q = (document.getElementById('searchQna')?.value || '').toLowerCase().trim();
-  const list = qnaList.filter(item => !q || [item.nama, item.pertanyaan, item.kode].some(v => String(v).toLowerCase().includes(q)));
-  if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:#94a3b8;">Belum ada pertanyaan</td></tr>'; return; }
-  tbody.innerHTML = list.map((item, i) => `
-    <tr>
-      <td>${i+1}</td><td>${item.waktu}</td><td><code>${item.kode}</code></td><td>${item.nama}</td>
-      <td style="white-space: pre-wrap;">${item.pertanyaan}</td>
-    </tr>
-  `).join('');
+  
+  // Filter data berdasarkan pencarian
+  const list = qnaList.filter(item => 
+    !q || [item.nama, item.pertanyaan, item.kode].some(v => String(v).toLowerCase().includes(q))
+  );
+  
+  if (list.length === 0) { 
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:#94a3b8;">Belum ada pertanyaan</td></tr>'; 
+    return; 
+  }
+  
+  tbody.innerHTML = list.map((item, i) => {
+    // Cari nama perusahaan berdasarkan kode peserta
+    const dataPeserta = peserta.find(p => String(p.kode).trim() === String(item.kode).trim());
+    const namaPerusahaan = dataPeserta ? dataPeserta.perusahaan : '-';
+
+    return `
+      <tr>
+        <td>${i+1}</td>
+        <td>${item.waktu}</td>
+        <td>${namaPerusahaan}</td> <!-- Menampilkan Nama Perusahaan -->
+        <td>${item.nama}</td>
+        <td style="white-space: pre-wrap;">${item.pertanyaan}</td>
+      </tr>
+    `;
+  }).join('');
 }
 
 function startScanner() {
@@ -658,24 +673,39 @@ function exportCSV() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `daftar-hadir.csv`; a.click();
 }
 
+/* ================= EXPORT CSV PERTANYAAN (DIUPDATE) ================= */
 function exportCSVQna() {
   if (qnaList.length === 0) return;
-  const headers = ['No', 'Waktu Submit', 'Kode Peserta', 'Nama Peserta', 'Pertanyaan'];
-  const rows = qnaList.map((item, i) => [i+1, item.waktu, item.kode, item.nama, item.pertanyaan]);
+  const headers = ['No', 'Waktu Submit', 'Nama Perusahaan', 'Nama Peserta', 'Pertanyaan'];
+  
+  const rows = qnaList.map((item, i) => {
+    // Cari nama perusahaan berdasarkan kode peserta
+    const dataPeserta = peserta.find(p => String(p.kode).trim() === String(item.kode).trim());
+    const namaPerusahaan = dataPeserta ? dataPeserta.perusahaan : '-';
+    
+    return [i+1, item.waktu, namaPerusahaan, item.nama, item.pertanyaan];
+  });
+  
   const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `rekap-pertanyaan.csv`; a.click();
 }
 
+/* ================= CETAK REKAP PERTANYAAN (DIUPDATE) ================= */
 function printQna() {
   if (qnaList.length === 0) return;
   const win = window.open('', '_blank');
   let html = `<html><head><title>Rekap Pertanyaan</title><style>body{font-family:Arial;padding:20px;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #999;padding:8px;font-size:12px;text-align:left;} th{background:#f1f5f9;}</style></head><body>
     <h2>Rekap Pertanyaan Sosialisasi Cukai</h2><p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
-    <table><thead><tr><th>No</th><th>Waktu</th><th>Kode</th><th>Nama</th><th>Pertanyaan</th></tr></thead><tbody>`;
+    <table><thead><tr><th>No</th><th>Waktu</th><th>Nama Perusahaan</th><th>Nama Peserta</th><th>Pertanyaan</th></tr></thead><tbody>`;
+  
   qnaList.forEach((item, i) => {
-    html += `<tr><td>${i+1}</td><td>${item.waktu}</td><td>${item.kode}</td><td>${item.nama}</td><td>${item.pertanyaan}</td></tr>`;
+    const dataPeserta = peserta.find(p => String(p.kode).trim() === String(item.kode).trim());
+    const namaPerusahaan = dataPeserta ? dataPeserta.perusahaan : '-';
+    
+    html += `<tr><td>${i+1}</td><td>${item.waktu}</td><td>${namaPerusahaan}</td><td>${item.nama}</td><td>${item.pertanyaan}</td></tr>`;
   });
+  
   html += `</tbody></table></body></html>`;
   win.document.write(html); win.document.close(); setTimeout(() => win.print(), 500);
 }
