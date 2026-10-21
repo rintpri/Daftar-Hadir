@@ -6,144 +6,202 @@
 <title>Daftar Hadir - Registrasi QR Code & Pengaturan Meja</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<!-- Google Fonts untuk tampilan modern -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-  body { background: #f0f4f8; color: #1e293b; padding: 20px; }
+  :root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --bg-color: #f3f4f6;
+    --card-bg: #ffffff;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+  body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; min-height: 100vh; }
   
   .container { max-width: 1200px; margin: 0 auto; display: none; }
-  .container.active { display: block; }
-  h1 { text-align: center; color: #0f172a; margin-bottom: 20px; }
-  .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 24px; }
-  .card h2 { margin-bottom: 16px; color: #1d4ed8; font-size: 1.2rem; border-left: 4px solid #1d4ed8; padding-left: 10px; }
-  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
-  .form-group { display: flex; flex-direction: column; }
-  label { font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: #475569; }
-  input, select, textarea { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; transition: 0.2s; font-family: inherit; }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,0.15); }
-  .btn { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.95rem; transition: 0.2s; }
-  .btn-primary { background: #1d4ed8; color: #fff; }
-  .btn-primary:hover { background: #1e40af; }
-  .btn-success { background: #16a34a; color: #fff; }
-  .btn-success:hover { background: #15803d; }
-  .btn-danger { background: #dc2626; color: #fff; }
-  .btn-danger:hover { background: #b91c1c; }
-  .btn-warning { background: #f59e0b; color: #fff; }
-  .btn-warning:hover { background: #d97706; }
-  .btn-secondary { background: #475569; color: #fff; }
-  .btn-secondary:hover { background: #334155; }
-  .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
-  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-  .form-actions { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .container.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+  
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  #reader { width: 100%; max-width: 400px; margin: 0 auto; border-radius: 12px; overflow: hidden; display: none; }
-  #reader.active { display: block; }
-  .scan-result { margin-top: 16px; padding: 16px; border-radius: 10px; text-align: center; font-weight: 600; display: none; font-size: 1.1rem; }
-  .scan-result.success { display: block; background: #dcfce7; color: #15803d; border: 2px solid #16a34a; }
-  .scan-result.error { display: block; background: #fee2e2; color: #b91c1c; border: 2px solid #dc2626; }
-  .scan-result.warn { display: block; background: #fef3c7; color: #b45309; border: 2px solid #f59e0b; }
-
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-  th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-  th { background: #f1f5f9; font-weight: 700; color: #334155; white-space: nowrap; }
-  tr:hover { background: #f8fafc; }
-  .badge { padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
-  .badge-hadir { background: #dcfce7; color: #15803d; }
-  .badge-belum { background: #fef3c7; color: #b45309; }
-
-  .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999; justify-content: center; align-items: center; padding: 20px; }
-  .modal.active { display: flex; }
-  .modal-content { background: #fff; border-radius: 14px; padding: 28px; max-width: 480px; width: 100%; text-align: center; }
-  .modal-content img { margin: 16px auto; display: block; max-width: 100%; }
-  .modal-content .info { text-align: left; font-size: 0.95rem; margin-bottom: 16px; background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0; }
-  .modal-content .info p { margin: 6px 0; }
-  .modal-content .info span { font-weight: 700; color: #1d4ed8; }
-
-  .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-  .tab-btn { padding: 10px 20px; border: 2px solid #cbd5e1; background: #fff; border-radius: 8px; cursor: pointer; font-weight: 600; color: #64748b; }
-  .tab-btn.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
-  .stat { background: #f8fafc; border-radius: 10px; padding: 14px; text-align: center; border: 1px solid #e2e8f0; }
-  .stat h3 { font-size: 1.6rem; color: #1d4ed8; }
-  .stat p { font-size: 0.8rem; color: #64748b; }
-
-  .filter-bar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
-  .filter-bar input { flex: 1; min-width: 200px; }
-  .filter-bar select { min-width: 140px; }
-
-  .toast { position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: 10px; color: #fff; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.2); opacity: 0; transform: translateY(20px); transition: 0.3s; z-index: 1000; }
-  .toast.show { opacity: 1; transform: translateY(0); }
-  .toast.success { background: #16a34a; }
-  .toast.error { background: #dc2626; }
-  .toast.info { background: #1d4ed8; }
-
-  .conn-status { display: inline-block; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; margin-left: 8px; }
-  .conn-online { background: #dcfce7; color: #15803d; }
-  .conn-offline { background: #fee2e2; color: #b91c1c; }
+  /* HEADER */
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 15px; }
+  h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
+  
+  /* CONNECTION STATUS BADGE */
+  .conn-status { font-size: 0.75rem; padding: 6px 12px; border-radius: 20px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+  .conn-online { background: #d1fae5; color: #065f46; }
+  .conn-offline { background: #fee2e2; color: #991b1b; }
   .conn-loading { background: #e0e7ff; color: #3730a3; }
+  .conn-status::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 
-  #peserta-page { display: none; justify-content: center; align-items: center; min-height: 90vh; }
+  /* TABS */
+  .tabs { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+  .tab-btn { padding: 10px 18px; border: none; background: transparent; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--text-muted); transition: all 0.2s; }
+  .tab-btn:hover { background: #e5e7eb; color: var(--text-main); }
+  .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+
+  /* CARDS */
+  .card { background: var(--card-bg); border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); margin-bottom: 24px; border: 1px solid var(--border-color); }
+  .card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+
+  /* FORMS */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 0.85rem; font-weight: 600; color: var(--text-main); }
+  input, select, textarea { padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 0.95rem; font-family: inherit; transition: all 0.2s; background: #f9fafb; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+  
+  /* BUTTONS */
+  .btn { padding: 11px 20px; border: none; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-success { background: var(--success); color: white; }
+  .btn-success:hover { background: #059669; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-warning { background: var(--warning); color: white; }
+  .btn-warning:hover { background: #d97706; }
+  .btn-secondary { background: #4b5563; color: white; }
+  .btn-secondary:hover { background: #374151; }
+  .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .form-actions { margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* SCANNER */
+  #reader { width: 100%; max-width: 400px; margin: 0 auto 20px auto; border-radius: 16px; overflow: hidden; display: none; border: 3px solid var(--primary); }
+  #reader.active { display: block; }
+  .scan-result { padding: 20px; border-radius: 12px; text-align: center; font-weight: 600; display: none; font-size: 1.1rem; margin-top: 20px; }
+  .scan-result.success { display: block; background: #ecfdf5; color: #047857; border: 2px solid #10b981; animation: fadeIn 0.3s; }
+  .scan-result.error { display: block; background: #fef2f2; color: #b91c1c; border: 2px solid #ef4444; }
+  .scan-result.warn { display: block; background: #fffbeb; color: #b45309; border: 2px solid #f59e0b; }
+
+  /* TABLES */
+  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-color); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; white-space: nowrap; }
+  th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border-color); }
+  th { background: #f9fafb; font-weight: 600; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f9fafb; }
+  td { color: var(--text-main); }
+  
+  .badge { padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+  .badge-hadir { background: #d1fae5; color: #065f46; }
+  .badge-belum { background: #fef3c7; color: #92400e; }
+
+  /* STATS */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat { background: var(--card-bg); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+  .stat h3 { font-size: 2rem; font-weight: 700; margin-bottom: 4px; }
+  .stat p { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+
+  /* FILTER BAR */
+  .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; background: #f9fafb; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); }
+  .filter-bar input { flex: 1; min-width: 200px; background: #fff; }
+  .filter-bar select { min-width: 150px; background: #fff; }
+
+  /* MODALS */
+  .modal { display: none; position: fixed; inset: 0; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(4px); z-index: 999; justify-content: center; align-items: center; padding: 20px; opacity: 0; transition: opacity 0.3s; }
+  .modal.active { display: flex; opacity: 1; }
+  .modal-content { background: var(--card-bg); border-radius: 20px; padding: 32px; max-width: 450px; width: 100%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); position: relative; }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  
+  .modal-content h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; color: var(--text-main); }
+  .modal-content img { margin: 20px auto; display: block; max-width: 100%; border-radius: 8px; border: 1px solid var(--border-color); }
+  .modal-content .info { text-align: left; font-size: 0.95rem; margin-bottom: 20px; background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); }
+  .modal-content .info p { margin: 8px 0; color: var(--text-main); }
+  .modal-content .info span { font-weight: 700; color: var(--primary); font-size: 1.1rem; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 16px 24px; border-radius: 12px; color: white; font-weight: 500; font-size: 0.95rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1000; display: flex; align-items: center; gap: 10px; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+  .toast.info { background: var(--primary); }
+
+  /* HALAMAN PESERTA (FORM) */
+  #peserta-page { display: none; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
   #peserta-page.active { display: flex; }
-  .form-container { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); max-width: 500px; width: 100%; }
-  .form-container h2 { color: #1d4ed8; text-align: center; margin-bottom: 10px; }
-  .form-container p.subtitle { text-align: center; color: #64748b; font-size: 0.9rem; margin-bottom: 20px; }
-  .success-msg { display: none; text-align: center; color: #15803d; font-weight: bold; margin-top: 20px; padding: 16px; background: #dcfce7; border-radius: 8px; }
-  .error-msg { display: none; text-align: center; color: #b91c1c; font-weight: bold; margin-top: 20px; padding: 16px; background: #fee2e2; border-radius: 8px; }
+  .form-container { background: var(--card-bg); border-radius: 24px; padding: 32px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); max-width: 500px; width: 100%; border: 1px solid var(--border-color); }
+  .form-container h2 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); text-align: center; margin-bottom: 8px; }
+  .form-container p.subtitle { text-align: center; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; }
+  .success-msg { display: none; text-align: center; color: #065f46; font-weight: 600; margin-top: 24px; padding: 24px; background: #ecfdf5; border-radius: 12px; border: 1px solid #10b981; }
+  .error-msg { display: none; text-align: center; color: #991b1b; font-weight: 600; margin-top: 24px; padding: 24px; background: #fef2f2; border-radius: 12px; border: 1px solid #ef4444; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    body { padding: 12px; }
+    h1 { font-size: 1.3rem; }
+    .card { padding: 20px; }
+    .header { flex-direction: column; align-items: flex-start; }
+    .tabs { gap: 8px; }
+    .tab-btn { flex: 1; text-align: center; justify-content: center; padding: 10px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr; }
+    .modal-content { padding: 24px; }
+    .form-actions .btn { width: 100%; }
+    .filter-bar { flex-direction: column; align-items: stretch; }
+    .filter-bar input, .filter-bar select { width: 100%; }
+  }
 </style>
 </head>
 <body>
 
 <div class="container active" id="admin-page">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap;">
-    <h1 style="margin:0;">📋 Daftar Hadir <span id="connStatus" class="conn-status conn-loading">Menghubungkan…</span></h1>
+  <div class="header">
+    <h1>📋 Daftar Hadir <span id="connStatus" class="conn-status conn-loading">Menghubungkan…</span></h1>
     <button class="btn btn-danger btn-sm" id="btnLogout" style="display:none;" onclick="logoutAdmin()">🚪 Logout Admin</button>
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" id="tab-btn-registrasi" onclick="switchTab('registrasi', this)">📝 Registrasi Peserta</button>
-    <button class="tab-btn" id="tab-btn-scan" onclick="requestAdmin('scan', this)">📷 Scan Kehadiran</button>
-    <button class="tab-btn" id="tab-btn-data" onclick="requestAdmin('data', this)">📊 Data Peserta</button>
-    <button class="tab-btn" id="tab-btn-rekap" onclick="requestAdmin('rekap', this)">📑 Rekap Pertanyaan</button>
+    <button class="tab-btn active" id="tab-btn-registrasi" onclick="switchTab('registrasi', this)">📝 Registrasi</button>
+    <button class="tab-btn" id="tab-btn-scan" onclick="requestAdmin('scan', this)">📷 Scan</button>
+    <button class="tab-btn" id="tab-btn-data" onclick="requestAdmin('data', this)">📊 Data</button>
+    <button class="tab-btn" id="tab-btn-rekap" onclick="requestAdmin('rekap', this)">📑 Rekap</button>
   </div>
 
+  <!-- TAB REGISTRASI -->
   <div id="tab-registrasi" class="tab-content active">
     <div class="card">
       <h2>Formulir Pendaftaran Peserta</h2>
       <form id="formRegistrasi">
         <div class="form-grid">
           <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="nama" required placeholder="Nama peserta"></div>
-          
-          <!-- DROPDOWN PERUSAHAAN -->
           <div class="form-group">
             <label>Nama Perusahaan *</label>
             <select id="perusahaan" required>
-              <option value="">-- Memuat data perusahaan... --</option>
+              <option value="">-- Memuat data... --</option>
             </select>
           </div>
-          
           <div class="form-group"><label>Jabatan *</label><input type="text" id="jabatan" required placeholder="Contoh: Manager"></div>
           <div class="form-group"><label>No. HP *</label><input type="tel" id="hp" required placeholder="08xxxxxxxxxx"></div>
           <div class="form-group"><label>Email *</label><input type="email" id="email" required placeholder="nama@email.com"></div>
         </div>
         <div class="form-actions">
-          <button type="submit" id="btnSubmit" class="btn btn-primary">💾 Simpan & Generate QR Code</button>
+          <button type="submit" id="btnSubmit" class="btn btn-primary">💾 Simpan & Generate QR</button>
           <button type="reset" class="btn btn-warning">↺ Reset</button>
         </div>
       </form>
     </div>
   </div>
 
+  <!-- TAB SCAN -->
   <div id="tab-scan" class="tab-content">
     <div class="card">
       <h2>Scan QR Code Kehadiran</h2>
-      <div class="form-actions" style="margin-bottom:16px;">
+      <div class="form-actions" style="margin-bottom:20px;">
         <button class="btn btn-success" id="btnStartScan" onclick="startScanner()">📷 Mulai Kamera</button>
         <button class="btn btn-danger" id="btnStopScan" onclick="stopScanner()" style="display:none;">⏹ Stop Kamera</button>
       </div>
       <div id="reader"></div>
-      <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <input type="text" id="manualCode" placeholder="Ketik kode QR manual..." style="flex:1; min-width:200px;">
         <button class="btn btn-primary" onclick="processManual()">✓ Proses</button>
       </div>
@@ -151,13 +209,14 @@
     </div>
   </div>
 
+  <!-- TAB DATA -->
   <div id="tab-data" class="tab-content">
     <div class="card">
       <h2>Data Peserta</h2>
       <div class="stats">
-        <div class="stat"><h3 id="statTotal">0</h3><p>Total Peserta</p></div>
-        <div class="stat"><h3 id="statHadir" style="color:#16a34a;">0</h3><p>Hadir</p></div>
-        <div class="stat"><h3 id="statBelum" style="color:#f59e0b;">0</h3><p>Belum Hadir</p></div>
+        <div class="stat"><h3 id="statTotal" style="color:var(--primary);">0</h3><p>Total Peserta</p></div>
+        <div class="stat"><h3 id="statHadir" style="color:var(--success);">0</h3><p>Hadir</p></div>
+        <div class="stat"><h3 id="statBelum" style="color:var(--warning);">0</h3><p>Belum Hadir</p></div>
       </div>
       <div class="filter-bar">
         <input type="text" id="searchInput" placeholder="🔍 Cari nama / perusahaan / kode..." oninput="renderTable()">
@@ -166,18 +225,18 @@
           <option value="hadir">Sudah Hadir</option>
           <option value="belum">Belum Hadir</option>
         </select>
-        <button class="btn btn-secondary btn-sm" onclick="resetFilter()">↺ Reset Filter</button>
+        <button class="btn btn-secondary btn-sm" onclick="resetFilter()">↺ Reset</button>
         <button class="btn btn-primary btn-sm" onclick="loadData(true)">🔄 Refresh</button>
       </div>
-      <div class="form-actions" style="margin-bottom:14px;">
-        <button class="btn btn-primary btn-sm" onclick="printAllQrCodes()">🖨️ Cetak Semua QR</button>
-        <button class="btn btn-success btn-sm" onclick="exportCSV()">📥 Export CSV Peserta</button>
-        <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑️ Hapus Semua Data</button>
+      <div class="form-actions" style="margin-bottom:20px;">
+        <button class="btn btn-primary btn-sm" onclick="printAllQrCodes()">🖨️ Cetak QR</button>
+        <button class="btn btn-success btn-sm" onclick="exportCSV()">📥 Export CSV</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑️ Hapus Data</button>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>No</th><th>Kode</th><th>Nama</th><th>Perusahaan</th><th>Jabatan</th><th>No. HP</th><th>Email</th><th>Status</th><th>Aksi</th></tr>
+            <tr><th>No</th><th>Kode</th><th>Nama</th><th>Perusahaan</th><th>Jabatan</th><th>No. HP</th><th>Status</th><th>Aksi</th></tr>
           </thead>
           <tbody id="tbodyPeserta"></tbody>
         </table>
@@ -185,6 +244,7 @@
     </div>
   </div>
 
+  <!-- TAB REKAP -->
   <div id="tab-rekap" class="tab-content">
     <div class="card">
       <h2>Rekap Pertanyaan Peserta</h2>
@@ -192,14 +252,13 @@
         <input type="text" id="searchQna" placeholder="🔍 Cari nama / pertanyaan..." oninput="renderTableQna()">
         <button class="btn btn-primary btn-sm" onclick="loadData(true)">🔄 Refresh</button>
       </div>
-      <div class="form-actions" style="margin-bottom:14px;">
-        <button class="btn btn-success btn-sm" onclick="exportCSVQna()">📥 Export CSV Pertanyaan</button>
+      <div class="form-actions" style="margin-bottom:20px;">
+        <button class="btn btn-success btn-sm" onclick="exportCSVQna()">📥 Export CSV</button>
         <button class="btn btn-secondary btn-sm" onclick="printQna()">🖨️ Cetak Rekap</button>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
-            <!-- KOLOM DIUBAH: Kode Peserta menjadi Nama Perusahaan -->
             <tr><th>No</th><th>Waktu Submit</th><th>Nama Perusahaan</th><th>Nama Peserta</th><th>Pertanyaan</th></tr>
           </thead>
           <tbody id="tbodyQna"></tbody>
@@ -210,22 +269,23 @@
 
 </div>
 
+<!-- HALAMAN PESERTA -->
 <div id="peserta-page">
   <div class="form-container">
     <h2>❓ Form Pertanyaan Cukai</h2>
     <p class="subtitle">Silakan ajukan pertanyaan Anda seputar materi sosialisasi cukai.</p>
     
-    <div class="info-box" id="infoPeserta">
+    <div class="info-box modal-content info" id="infoPeserta" style="margin-bottom:20px;">
       <p>Memuat data peserta...</p>
     </div>
 
     <div id="formArea" style="display: none;">
-      <textarea id="pertanyaan" rows="5" placeholder="Ketik pertanyaan Anda di sini..."></textarea>
-      <button class="btn btn-success" id="btnKirim" style="width:100%; margin-top:10px;" onclick="kirimPertanyaan()">💾 Kirim Pertanyaan</button>
+      <textarea id="pertanyaan" rows="5" style="width:100%;" placeholder="Ketik pertanyaan Anda di sini..."></textarea>
+      <button class="btn btn-success" id="btnKirim" style="width:100%; margin-top:16px;" onclick="kirimPertanyaan()">💾 Kirim Pertanyaan</button>
     </div>
     
     <div class="success-msg" id="successMsg">
-      ✅ Pertanyaan berhasil dikirim!<br><span style="font-size:0.85rem; font-weight:normal;">Terima kasih atas partisipasi Anda.</span>
+      ✅ Pertanyaan berhasil dikirim!<br><span style="font-size:0.85rem; font-weight:normal; color:#047857;">Terima kasih atas partisipasi Anda.</span>
     </div>
     
     <div class="error-msg" id="errorMsg">
@@ -234,43 +294,46 @@
   </div>
 </div>
 
+<!-- MODAL LOGIN -->
 <div class="modal" id="modalLogin">
   <div class="modal-content">
-    <h3 style="color:#1d4ed8; margin-bottom:16px;">🔒 Login Admin</h3>
-    <input type="password" id="adminPassword" placeholder="Password Admin" style="width:100%; margin-bottom:16px;" onkeypress="if(event.key === 'Enter') verifyAdmin()">
+    <h3>🔒 Login Admin</h3>
+    <input type="password" id="adminPassword" placeholder="Password Admin" style="width:100%; margin-bottom:20px; text-align:center;" onkeypress="if(event.key === 'Enter') verifyAdmin()">
     <div class="form-actions" style="justify-content:center;">
-      <button class="btn btn-primary" onclick="verifyAdmin()">Masuk</button>
-      <button class="btn btn-danger" onclick="closeLogin()">Batal</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="verifyAdmin()">Masuk</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="closeLogin()">Batal</button>
     </div>
   </div>
 </div>
 
+<!-- MODAL QR PESERTA -->
 <div class="modal" id="modalQr">
   <div class="modal-content">
-    <h3 style="color:#1d4ed8;">🎫 Kartu Peserta</h3>
+    <h3>🎫 Kartu Peserta</h3>
     <div id="printArea">
       <div class="info" id="modalInfo"></div>
-      <div id="qrcodeContainer"></div>
-      <p style="font-size:0.75rem;color:#94a3b8;margin-top:10px;">Tunjukkan QR Code ini saat registrasi kehadiran</p>
+      <div id="qrcodeContainer" style="display:flex; justify-content:center;"></div>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-top:16px;">Tunjukkan QR Code ini saat registrasi kehadiran</p>
     </div>
-    <div class="form-actions" style="justify-content:center;margin-top:16px;">
-      <button class="btn btn-primary" onclick="printQr()">🖨️ Cetak</button>
-      <button class="btn btn-danger" onclick="document.getElementById('modalQr').classList.remove('active')">✕ Tutup</button>
+    <div class="form-actions" style="justify-content:center;margin-top:20px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="printQr()">🖨️ Cetak</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="document.getElementById('modalQr').classList.remove('active')">✕ Tutup</button>
     </div>
   </div>
 </div>
 
+<!-- MODAL QR FORM -->
 <div class="modal" id="modalQrForm">
   <div class="modal-content">
-    <h3 style="color:#1d4ed8;">🎫 Kartu Peserta & Meja</h3>
+    <h3>🎫 Kartu Peserta & Meja</h3>
     <div id="printAreaForm">
       <div class="info" id="modalInfoForm"></div>
-      <div id="qrcodeFormContainer"></div>
-      <p style="font-size:0.75rem;color:#94a3b8;margin-top:10px;">Pindai QR Code ini menggunakan HP Anda untuk mengajukan pertanyaan.</p>
+      <div id="qrcodeFormContainer" style="display:flex; justify-content:center;"></div>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-top:16px;">Pindai QR Code ini menggunakan HP Anda untuk mengajukan pertanyaan.</p>
     </div>
-    <div class="form-actions" style="justify-content:center;margin-top:16px;">
-      <button class="btn btn-primary" onclick="window.print()">🖨️ Cetak</button>
-      <button class="btn btn-danger" onclick="document.getElementById('modalQrForm').classList.remove('active')">✕ Tutup</button>
+    <div class="form-actions" style="justify-content:center;margin-top:20px;">
+      <button class="btn btn-primary" style="flex:1;" onclick="window.print()">🖨️ Cetak</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="document.getElementById('modalQrForm').classList.remove('active')">✕ Tutup</button>
     </div>
   </div>
 </div>
@@ -309,7 +372,7 @@ async function loadPesertaForm(kode) {
     document.getElementById('infoPeserta').innerHTML = `
       <p><span>${p.Nama}</span></p>
       <p>${p.Jabatan} - ${p.Perusahaan}</p>
-      <p style="margin-top:8px; padding-top:8px; border-top:1px dashed #cbd5e1;"><strong>Meja: ${nomorMeja}</strong></p>
+      <p style="margin-top:12px; padding-top:12px; border-top:1px dashed var(--border-color); color:var(--success); font-size:1.2rem;"><strong>Meja: ${nomorMeja}</strong></p>
     `;
     document.getElementById('formArea').style.display = 'block';
   } catch (err) {
@@ -352,8 +415,8 @@ function showToast(msg, type = 'info') {
 
 function setConn(state) {
   const el = document.getElementById('connStatus');
-  if (state === 'online') { el.className = 'conn-status conn-online'; el.textContent = '● Terhubung'; isOnline = true; }
-  else if (state === 'offline') { el.className = 'conn-status conn-offline'; el.textContent = '● Gagal'; isOnline = false; }
+  if (state === 'online') { el.className = 'conn-status conn-online'; el.textContent = 'Terhubung'; isOnline = true; }
+  else if (state === 'offline') { el.className = 'conn-status conn-offline'; el.textContent = 'Gagal'; isOnline = false; }
   else { el.className = 'conn-status conn-loading'; el.textContent = 'Menghubungkan…'; }
 }
 
@@ -367,7 +430,7 @@ function requestAdmin(tabName, btn) {
 function verifyAdmin() {
   if (document.getElementById('adminPassword').value === 'admin123') { 
     isAdmin = true; adminPassword = 'admin123'; closeLogin();
-    document.getElementById('btnLogout').style.display = 'inline-block';
+    document.getElementById('btnLogout').style.display = 'inline-flex';
     showToast('Login Berhasil', 'success');
     if (pendingTab && pendingBtn) switchTab(pendingTab, pendingBtn);
   } else { showToast('Password Salah!', 'error'); document.getElementById('adminPassword').value = ''; }
@@ -376,7 +439,7 @@ function closeLogin() { document.getElementById('modalLogin').classList.remove('
 function logoutAdmin() {
   isAdmin = false; adminPassword = ""; document.getElementById('btnLogout').style.display = 'none';
   switchTab('registrasi', document.getElementById('tab-btn-registrasi'));
-  stopScanner(); showToast('Logout', 'info');
+  stopScanner(); showToast('Logout Berhasil', 'info');
 }
 
 function switchTab(name, btn) {
@@ -391,7 +454,6 @@ function switchTab(name, btn) {
   if (name !== 'scan') stopScanner();
 }
 
-/* ================= LOAD DATA & DROPDOWN ================= */
 async function loadData(showToastNotif = false) {
   setConn('loading');
   try {
@@ -415,39 +477,31 @@ async function loadData(showToastNotif = false) {
       waktu: row.Waktu || '', kode: row.Kode || '', nama: row.Nama || '', pertanyaan: row.Pertanyaan || ''
     }));
 
-    // Simpan data meja & isi dropdown
     mejaList = data.meja || [];
     updateDropdownPerusahaan();
     
     setConn('online');
     if (isAdmin) { renderTable(); renderTableQna(); }
-    if (showToastNotif) showToast('Data dimuat: ' + peserta.length + ' peserta', 'success');
+    if (showToastNotif) showToast('Data berhasil dimuat', 'success');
   } catch (err) {
-    console.error(err); setConn('offline'); showToast('Gagal memuat: ' + err.message, 'error');
+    console.error(err); setConn('offline'); showToast('Gagal memuat data', 'error');
   }
 }
 
 function updateDropdownPerusahaan() {
   const select = document.getElementById('perusahaan');
   if (!select) return;
-  
   const currentVal = select.value;
   select.innerHTML = '<option value="">-- Pilih Perusahaan --</option>';
-  
   const uniqueCompanies = [...new Set(mejaList.map(m => m.NamaPerusahaan))];
   uniqueCompanies.sort().forEach(pt => {
     const option = document.createElement('option');
-    option.value = pt;
-    option.textContent = pt;
+    option.value = pt; option.textContent = pt;
     select.appendChild(option);
   });
-  
-  if (currentVal && uniqueCompanies.includes(currentVal)) {
-    select.value = currentVal;
-  }
+  if (currentVal && uniqueCompanies.includes(currentVal)) select.value = currentVal;
 }
 
-/* ================= KIRIM DATA ================= */
 function sendData(payload) {
   return new Promise((resolve) => {
     const iframeName = 'hidden_iframe_' + Date.now();
@@ -480,17 +534,17 @@ document.getElementById('formRegistrasi').addEventListener('submit', async funct
   };
   try {
     await sendData(data);
-    this.reset(); showToast('Peserta Tersimpan!', 'success');
+    this.reset(); showToast('Peserta berhasil disimpan', 'success');
     showQrModal(data); await loadData(); 
   } catch (err) { showToast('Gagal menyimpan', 'error'); } 
-  finally { btn.disabled = false; btn.textContent = '💾 Simpan & Generate QR Code'; }
+  finally { btn.disabled = false; btn.textContent = '💾 Simpan & Generate QR'; }
 });
 
 function showQrModal(p) {
   document.getElementById('modalInfo').innerHTML = `<p><span>${p.nama || p.Nama}</span></p><p>${p.jabatan || p.Jabatan} - ${p.perusahaan || p.Perusahaan}</p>`;
   const qrContainer = document.getElementById('qrcodeContainer'); qrContainer.innerHTML = '';
   const qr = qrcode(0, 'H'); qr.addData(p.kode || p.Kode); qr.make();
-  qrContainer.innerHTML = qr.createImgTag(5, 10);
+  qrContainer.innerHTML = qr.createImgTag(6, 12);
   document.getElementById('modalQr').classList.add('active');
 }
 function printQr() { window.print(); }
@@ -501,19 +555,16 @@ function showQrFormModal(p) {
     const mejaMatch = mejaList.find(m => String(m.NamaPerusahaan).toLowerCase() === String(p.perusahaan).toLowerCase());
     if (mejaMatch) nomorMeja = mejaMatch.NomorMeja;
   }
-
   document.getElementById('modalInfoForm').innerHTML = `
     <p><span>${p.nama}</span></p>
     <p>${p.jabatan} - ${p.perusahaan}</p>
-    <p style="margin-top:10px; font-size:1.2rem; color:#16a34a;"><strong>Meja: ${nomorMeja}</strong></p>
+    <p style="margin-top:12px; color:var(--success); font-size:1.2rem;"><strong>Meja: ${nomorMeja}</strong></p>
   `;
-
   const qrContainer = document.getElementById('qrcodeFormContainer'); qrContainer.innerHTML = '';
   const baseUrl = window.location.href.split('?')[0];
   const formUrl = baseUrl + '?kode=' + encodeURIComponent(p.kode);
   const qr = qrcode(0, 'H'); qr.addData(formUrl); qr.make();
-  qrContainer.innerHTML = qr.createImgTag(5, 10);
-  
+  qrContainer.innerHTML = qr.createImgTag(6, 12);
   document.getElementById('modalQrForm').classList.add('active');
 }
 
@@ -534,16 +585,18 @@ function renderTable() {
   document.getElementById('statHadir').textContent = peserta.filter(p => p.hadir).length;
   document.getElementById('statBelum').textContent = peserta.length - peserta.filter(p => p.hadir).length;
   const list = getFiltered();
-  if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:#94a3b8;">Tidak ada data</td></tr>'; return; }
+  if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-muted);">Tidak ada data</td></tr>'; return; }
   tbody.innerHTML = list.map((p, i) => `
     <tr>
-      <td>${i+1}</td><td><code>${p.kode}</code></td><td>${p.nama}</td>
-      <td>${p.perusahaan}</td><td>${p.jabatan}</td><td>${p.hp}</td><td>${p.email}</td>
+      <td>${i+1}</td><td><code>${p.kode}</code></td><td><strong>${p.nama}</strong></td>
+      <td>${p.perusahaan}</td><td>${p.jabatan}</td><td>${p.hp}</td>
       <td>${p.hadir ? `<span class="badge badge-hadir">✓ Hadir</span>` : `<span class="badge badge-belum">Belum</span>`}</td>
       <td>
-        <button class="btn btn-primary btn-sm" onclick="viewQr('${p.kode}')" title="Kartu QR">🎫</button>
-        ${p.hadir ? `<button class="btn btn-warning btn-sm" onclick="viewQrForm('${p.kode}')" title="QR Form & Meja">❓ Form & Meja</button>` : ''}
-        <button class="btn btn-danger btn-sm" onclick="hapusPeserta('${p.kode}')" title="Hapus">🗑️</button>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-primary btn-sm" onclick="viewQr('${p.kode}')" title="Kartu QR">🎫</button>
+          ${p.hadir ? `<button class="btn btn-warning btn-sm" onclick="viewQrForm('${p.kode}')" title="Form & Meja">❓</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="hapusPeserta('${p.kode}')" title="Hapus">🗑️</button>
+        </div>
       </td>
     </tr>
   `).join('');
@@ -563,33 +616,18 @@ async function clearAll() {
   await loadData();
 }
 
-/* ================= REKAP PERTANYAAN (DIUPDATE) ================= */
 function renderTableQna() {
   const tbody = document.getElementById('tbodyQna');
   const q = (document.getElementById('searchQna')?.value || '').toLowerCase().trim();
-  
-  // Filter data berdasarkan pencarian
-  const list = qnaList.filter(item => 
-    !q || [item.nama, item.pertanyaan, item.kode].some(v => String(v).toLowerCase().includes(q))
-  );
-  
-  if (list.length === 0) { 
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:#94a3b8;">Belum ada pertanyaan</td></tr>'; 
-    return; 
-  }
-  
+  const list = qnaList.filter(item => !q || [item.nama, item.pertanyaan, item.kode].some(v => String(v).toLowerCase().includes(q)));
+  if (list.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-muted);">Belum ada pertanyaan</td></tr>'; return; }
   tbody.innerHTML = list.map((item, i) => {
-    // Cari nama perusahaan berdasarkan kode peserta
     const dataPeserta = peserta.find(p => String(p.kode).trim() === String(item.kode).trim());
     const namaPerusahaan = dataPeserta ? dataPeserta.perusahaan : '-';
-
     return `
       <tr>
-        <td>${i+1}</td>
-        <td>${item.waktu}</td>
-        <td>${namaPerusahaan}</td> <!-- Menampilkan Nama Perusahaan -->
-        <td>${item.nama}</td>
-        <td style="white-space: pre-wrap;">${item.pertanyaan}</td>
+        <td>${i+1}</td><td>${item.waktu}</td><td><strong>${namaPerusahaan}</strong></td><td>${item.nama}</td>
+        <td style="white-space: pre-wrap; min-width:250px;">${item.pertanyaan}</td>
       </tr>
     `;
   }).join('');
@@ -610,8 +648,8 @@ function startScanner() {
     ).then(() => {
       scanning = true;
       document.getElementById('btnStartScan').style.display = 'none';
-      document.getElementById('btnStopScan').style.display = 'inline-block';
-    }).catch(err => showToast('Gagal kamera: ' + err, 'error'));
+      document.getElementById('btnStopScan').style.display = 'inline-flex';
+    }).catch(err => showToast('Gagal membuka kamera', 'error'));
   }).catch(() => showToast('Izin kamera ditolak', 'error'));
 }
 
@@ -620,7 +658,7 @@ function stopScanner() {
   html5QrCode.stop().then(() => {
     html5QrCode.clear(); scanning = false;
     document.getElementById('reader').classList.remove('active');
-    document.getElementById('btnStartScan').style.display = 'inline-block';
+    document.getElementById('btnStartScan').style.display = 'inline-flex';
     document.getElementById('btnStopScan').style.display = 'none';
   }).catch(() => {});
 }
@@ -647,7 +685,7 @@ async function processCode(code) {
   if (mejaMatch) nomorMeja = mejaMatch.NomorMeja;
 
   resultEl.classList.add('success');
-  resultEl.innerHTML = `✅ Selamat datang, <b>${local.nama}</b>!<br><span style="font-size:1.5rem; color:#1d4ed8;">Meja: ${nomorMeja}</span>`;
+  resultEl.innerHTML = `✅ Selamat datang, <b>${local.nama}</b>!<br><span style="font-size:1.5rem; color:var(--primary);">Meja: ${nomorMeja}</span>`;
   
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -673,39 +711,30 @@ function exportCSV() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `daftar-hadir.csv`; a.click();
 }
 
-/* ================= EXPORT CSV PERTANYAAN (DIUPDATE) ================= */
 function exportCSVQna() {
   if (qnaList.length === 0) return;
   const headers = ['No', 'Waktu Submit', 'Nama Perusahaan', 'Nama Peserta', 'Pertanyaan'];
-  
   const rows = qnaList.map((item, i) => {
-    // Cari nama perusahaan berdasarkan kode peserta
     const dataPeserta = peserta.find(p => String(p.kode).trim() === String(item.kode).trim());
     const namaPerusahaan = dataPeserta ? dataPeserta.perusahaan : '-';
-    
     return [i+1, item.waktu, namaPerusahaan, item.nama, item.pertanyaan];
   });
-  
   const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `rekap-pertanyaan.csv`; a.click();
 }
 
-/* ================= CETAK REKAP PERTANYAAN (DIUPDATE) ================= */
 function printQna() {
   if (qnaList.length === 0) return;
   const win = window.open('', '_blank');
   let html = `<html><head><title>Rekap Pertanyaan</title><style>body{font-family:Arial;padding:20px;} table{width:100%;border-collapse:collapse;margin-top:20px;} th,td{border:1px solid #999;padding:8px;font-size:12px;text-align:left;} th{background:#f1f5f9;}</style></head><body>
     <h2>Rekap Pertanyaan Sosialisasi Cukai</h2><p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
     <table><thead><tr><th>No</th><th>Waktu</th><th>Nama Perusahaan</th><th>Nama Peserta</th><th>Pertanyaan</th></tr></thead><tbody>`;
-  
   qnaList.forEach((item, i) => {
     const dataPeserta = peserta.find(p => String(p.kode).trim() === String(item.kode).trim());
     const namaPerusahaan = dataPeserta ? dataPeserta.perusahaan : '-';
-    
     html += `<tr><td>${i+1}</td><td>${item.waktu}</td><td>${namaPerusahaan}</td><td>${item.nama}</td><td>${item.pertanyaan}</td></tr>`;
   });
-  
   html += `</tbody></table></body></html>`;
   win.document.write(html); win.document.close(); setTimeout(() => win.print(), 500);
 }
