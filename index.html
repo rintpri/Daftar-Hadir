@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daftar Hadir - Registrasi QR Code & Pengaturan Meja</title>
+<title>Daftar Hadir - Registrasi Peserta</title>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<!-- Google Fonts untuk tampilan modern -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -23,45 +22,30 @@
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-  body { background-color: var(--bg-color); color: var(--text-main); padding: 20px; min-height: 100vh; }
+  body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
   
-  .container { max-width: 1200px; margin: 0 auto; display: none; }
-  .container.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+  /* HEADER MINIMALIS */
+  .top-bar { padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+  .brand { font-size: 1.2rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
   
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-  /* HEADER */
-  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 15px; }
-  h1 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
+  /* HALAMAN DEPAN (FORM REGISTRASI) */
+  .front-container { display: flex; justify-content: center; align-items: center; flex: 1; padding: 20px; }
+  .register-card { background: var(--card-bg); border-radius: 24px; padding: 40px; box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1); max-width: 650px; width: 100%; border: 1px solid var(--border-color); }
+  .register-card h2 { font-size: 1.8rem; font-weight: 700; color: var(--text-main); text-align: center; margin-bottom: 8px; }
+  .register-card p.subtitle { text-align: center; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 32px; }
   
-  /* CONNECTION STATUS BADGE */
-  .conn-status { font-size: 0.75rem; padding: 6px 12px; border-radius: 20px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
-  .conn-online { background: #d1fae5; color: #065f46; }
-  .conn-offline { background: #fee2e2; color: #991b1b; }
-  .conn-loading { background: #e0e7ff; color: #3730a3; }
-  .conn-status::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-
-  /* TABS */
-  .tabs { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
-  .tab-btn { padding: 10px 18px; border: none; background: transparent; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--text-muted); transition: all 0.2s; }
-  .tab-btn:hover { background: #e5e7eb; color: var(--text-main); }
-  .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
-
-  /* CARDS */
-  .card { background: var(--card-bg); border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); margin-bottom: 24px; border: 1px solid var(--border-color); }
-  .card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
-
-  /* FORMS */
-  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
-  .form-group { display: flex; flex-direction: column; gap: 6px; }
-  label { font-size: 0.85rem; font-weight: 600; color: var(--text-main); }
-  input, select, textarea { padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font-size: 0.95rem; font-family: inherit; transition: all 0.2s; background: #f9fafb; }
+  /* FORM ELEMENTS */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .form-group { display: flex; flex-direction: column; gap: 8px; }
+  .form-group.full-width { grid-column: span 2; }
+  label { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+  input, select, textarea { padding: 14px 16px; border: 1px solid var(--border-color); border-radius: 12px; font-size: 1rem; font-family: inherit; transition: all 0.2s; background: #f9fafb; }
   input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
   
   /* BUTTONS */
-  .btn { padding: 11px 20px; border: none; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn { padding: 14px 24px; border: none; border-radius: 12px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
   .btn:active { transform: scale(0.98); }
-  .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+  .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); width: 100%; }
   .btn-primary:hover { background: var(--primary-hover); }
   .btn-success { background: var(--success); color: white; }
   .btn-success:hover { background: #059669; }
@@ -71,125 +55,173 @@
   .btn-warning:hover { background: #d97706; }
   .btn-secondary { background: #4b5563; color: white; }
   .btn-secondary:hover { background: #374151; }
-  .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; }
+  .btn-sm { padding: 8px 14px; font-size: 0.85rem; border-radius: 8px; }
   .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-  .form-actions { margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; }
+  
+  /* ADMIN DASHBOARD (TERSEMBUNYI) */
+  #admin-page { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
+  #admin-page.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 15px; }
+  h1 { font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+  
+  .conn-status { font-size: 0.75rem; padding: 6px 12px; border-radius: 20px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+  .conn-online { background: #d1fae5; color: #065f46; }
+  .conn-offline { background: #fee2e2; color: #991b1b; }
+  .conn-loading { background: #e0e7ff; color: #3730a3; }
+  .conn-status::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 
-  /* SCANNER */
+  .tabs { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+  .tab-btn { padding: 10px 18px; border: none; background: transparent; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--text-muted); transition: all 0.2s; }
+  .tab-btn:hover { background: #e5e7eb; color: var(--text-main); }
+  .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+
+  .card { background: var(--card-bg); border-radius: 16px; padding: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); margin-bottom: 24px; border: 1px solid var(--border-color); }
+  .card h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+
   #reader { width: 100%; max-width: 400px; margin: 0 auto 20px auto; border-radius: 16px; overflow: hidden; display: none; border: 3px solid var(--primary); }
   #reader.active { display: block; }
   .scan-result { padding: 20px; border-radius: 12px; text-align: center; font-weight: 600; display: none; font-size: 1.1rem; margin-top: 20px; }
-  .scan-result.success { display: block; background: #ecfdf5; color: #047857; border: 2px solid #10b981; animation: fadeIn 0.3s; }
+  .scan-result.success { display: block; background: #ecfdf5; color: #047857; border: 2px solid #10b981; }
   .scan-result.error { display: block; background: #fef2f2; color: #b91c1c; border: 2px solid #ef4444; }
   .scan-result.warn { display: block; background: #fffbeb; color: #b45309; border: 2px solid #f59e0b; }
 
-  /* TABLES */
   .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-color); }
   table { width: 100%; border-collapse: collapse; font-size: 0.9rem; white-space: nowrap; }
   th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border-color); }
-  th { background: #f9fafb; font-weight: 600; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; }
+  th { background: #f9fafb; font-weight: 600; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: #f9fafb; }
-  td { color: var(--text-main); }
   
   .badge { padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
   .badge-hadir { background: #d1fae5; color: #065f46; }
   .badge-belum { background: #fef3c7; color: #92400e; }
 
-  /* STATS */
   .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
-  .stat { background: var(--card-bg); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+  .stat { background: var(--card-bg); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid var(--border-color); }
   .stat h3 { font-size: 2rem; font-weight: 700; margin-bottom: 4px; }
   .stat p { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
 
-  /* FILTER BAR */
   .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; background: #f9fafb; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); }
   .filter-bar input { flex: 1; min-width: 200px; background: #fff; }
   .filter-bar select { min-width: 150px; background: #fff; }
 
+  .form-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+  .form-actions .btn { flex: 1; }
+
   /* MODALS */
   .modal { display: none; position: fixed; inset: 0; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(4px); z-index: 999; justify-content: center; align-items: center; padding: 20px; opacity: 0; transition: opacity 0.3s; }
   .modal.active { display: flex; opacity: 1; }
-  .modal-content { background: var(--card-bg); border-radius: 20px; padding: 32px; max-width: 450px; width: 100%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); position: relative; }
+  .modal-content { background: var(--card-bg); border-radius: 24px; padding: 32px; max-width: 450px; width: 100%; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); position: relative; }
   @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
   
-  .modal-content h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; color: var(--text-main); }
-  .modal-content img { margin: 20px auto; display: block; max-width: 100%; border-radius: 8px; border: 1px solid var(--border-color); }
+  .modal-content h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 20px; }
+  .modal-content img { margin: 20px auto; display: block; max-width: 100%; border-radius: 8px; }
   .modal-content .info { text-align: left; font-size: 0.95rem; margin-bottom: 20px; background: #f9fafb; padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); }
-  .modal-content .info p { margin: 8px 0; color: var(--text-main); }
+  .modal-content .info p { margin: 8px 0; }
   .modal-content .info span { font-weight: 700; color: var(--primary); font-size: 1.1rem; }
 
   /* TOAST */
-  .toast { position: fixed; bottom: 24px; right: 24px; padding: 16px 24px; border-radius: 12px; color: white; font-weight: 500; font-size: 0.95rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; transform: translateY(20px); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1000; display: flex; align-items: center; gap: 10px; }
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 16px 24px; border-radius: 12px; color: white; font-weight: 500; font-size: 0.95rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); opacity: 0; transform: translateY(20px); transition: all 0.3s; z-index: 1000; display: flex; align-items: center; gap: 10px; }
   .toast.show { opacity: 1; transform: translateY(0); }
   .toast.success { background: var(--success); }
   .toast.error { background: var(--danger); }
   .toast.info { background: var(--primary); }
 
-  /* HALAMAN PESERTA (FORM) */
+  /* HALAMAN PESERTA (FORM PERTANYAAN) */
   #peserta-page { display: none; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
   #peserta-page.active { display: flex; }
   .form-container { background: var(--card-bg); border-radius: 24px; padding: 32px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); max-width: 500px; width: 100%; border: 1px solid var(--border-color); }
-  .form-container h2 { font-size: 1.5rem; font-weight: 700; color: var(--text-main); text-align: center; margin-bottom: 8px; }
+  .form-container h2 { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 8px; }
   .form-container p.subtitle { text-align: center; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 24px; }
   .success-msg { display: none; text-align: center; color: #065f46; font-weight: 600; margin-top: 24px; padding: 24px; background: #ecfdf5; border-radius: 12px; border: 1px solid #10b981; }
   .error-msg { display: none; text-align: center; color: #991b1b; font-weight: 600; margin-top: 24px; padding: 24px; background: #fef2f2; border-radius: 12px; border: 1px solid #ef4444; }
 
   /* RESPONSIVE */
   @media (max-width: 768px) {
-    body { padding: 12px; }
-    h1 { font-size: 1.3rem; }
-    .card { padding: 20px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full-width { grid-column: span 1; }
+    .register-card { padding: 24px; }
+    .register-card h2 { font-size: 1.5rem; }
     .header { flex-direction: column; align-items: flex-start; }
     .tabs { gap: 8px; }
-    .tab-btn { flex: 1; text-align: center; justify-content: center; padding: 10px; }
-    .form-grid { grid-template-columns: 1fr; }
+    .tab-btn { flex: 1; text-align: center; padding: 10px; }
     .stats { grid-template-columns: 1fr; }
-    .modal-content { padding: 24px; }
-    .form-actions .btn { width: 100%; }
+    .form-actions { flex-direction: column; }
     .filter-bar { flex-direction: column; align-items: stretch; }
-    .filter-bar input, .filter-bar select { width: 100%; }
   }
 </style>
 </head>
 <body>
 
-<div class="container active" id="admin-page">
+<!-- TOP BAR (Tampilan Depan) -->
+<div class="top-bar" id="top-bar">
+  <div class="brand">📋 Daftar Hadir</div>
+  <button class="btn btn-secondary btn-sm" onclick="requestAdmin('dashboard', null)">🔒 Login Admin</button>
+</div>
+
+<!-- ========================================== -->
+<!-- HALAMAN DEPAN: HANYA FORM REGISTRASI -->
+<!-- ========================================== -->
+<div class="front-container" id="front-page">
+  <div class="register-card">
+    <h2>Formulir Pendaftaran Peserta</h2>
+    <p class="subtitle">Silakan lengkapi data diri Anda untuk mengikuti acara.</p>
+    
+    <form id="formRegistrasi">
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label>Nama Lengkap *</label>
+          <input type="text" id="nama" required placeholder="Masukkan nama lengkap">
+        </div>
+        
+        <div class="form-group full-width">
+          <label>Nama Perusahaan *</label>
+          <select id="perusahaan" required>
+            <option value="">-- Memuat data perusahaan... --</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Jabatan *</label>
+          <input type="text" id="jabatan" required placeholder="Contoh: Manager">
+        </div>
+        
+        <div class="form-group">
+          <label>No. HP *</label>
+          <input type="tel" id="hp" required placeholder="08xxxxxxxxxx">
+        </div>
+        
+        <div class="form-group full-width">
+          <label>Email *</label>
+          <input type="email" id="email" required placeholder="nama@email.com">
+        </div>
+      </div>
+      
+      <div class="form-actions" style="margin-top: 32px;">
+        <button type="submit" id="btnSubmit" class="btn btn-primary">💾 Daftar & Dapatkan QR Code</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- HALAMAN ADMIN (TERSEMBUNYI DARI DEPAN) -->
+<!-- ========================================== -->
+<div id="admin-page">
   <div class="header">
-    <h1>📋 Daftar Hadir <span id="connStatus" class="conn-status conn-loading">Menghubungkan…</span></h1>
-    <button class="btn btn-danger btn-sm" id="btnLogout" style="display:none;" onclick="logoutAdmin()">🚪 Logout Admin</button>
+    <h1>📊 Dashboard Admin <span id="connStatus" class="conn-status conn-loading">Menghubungkan…</span></h1>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-secondary btn-sm" onclick="backToFront()">🏠 Halaman Depan</button>
+      <button class="btn btn-danger btn-sm" id="btnLogout" onclick="logoutAdmin()">🚪 Logout</button>
+    </div>
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" id="tab-btn-registrasi" onclick="switchTab('registrasi', this)">📝 Registrasi</button>
-    <button class="tab-btn" id="tab-btn-scan" onclick="requestAdmin('scan', this)">📷 Scan</button>
-    <button class="tab-btn" id="tab-btn-data" onclick="requestAdmin('data', this)">📊 Data</button>
-    <button class="tab-btn" id="tab-btn-rekap" onclick="requestAdmin('rekap', this)">📑 Rekap</button>
-  </div>
-
-  <!-- TAB REGISTRASI -->
-  <div id="tab-registrasi" class="tab-content active">
-    <div class="card">
-      <h2>Formulir Pendaftaran Peserta</h2>
-      <form id="formRegistrasi">
-        <div class="form-grid">
-          <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="nama" required placeholder="Nama peserta"></div>
-          <div class="form-group">
-            <label>Nama Perusahaan *</label>
-            <select id="perusahaan" required>
-              <option value="">-- Memuat data... --</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Jabatan *</label><input type="text" id="jabatan" required placeholder="Contoh: Manager"></div>
-          <div class="form-group"><label>No. HP *</label><input type="tel" id="hp" required placeholder="08xxxxxxxxxx"></div>
-          <div class="form-group"><label>Email *</label><input type="email" id="email" required placeholder="nama@email.com"></div>
-        </div>
-        <div class="form-actions">
-          <button type="submit" id="btnSubmit" class="btn btn-primary">💾 Simpan & Generate QR</button>
-          <button type="reset" class="btn btn-warning">↺ Reset</button>
-        </div>
-      </form>
-    </div>
+    <button class="tab-btn" id="tab-btn-scan" onclick="switchTab('scan', this)">📷 Scan Kehadiran</button>
+    <button class="tab-btn" id="tab-btn-data" onclick="switchTab('data', this)">📊 Data Peserta</button>
+    <button class="tab-btn" id="tab-btn-rekap" onclick="switchTab('rekap', this)">📑 Rekap Pertanyaan</button>
   </div>
 
   <!-- TAB SCAN -->
@@ -202,7 +234,7 @@
       </div>
       <div id="reader"></div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input type="text" id="manualCode" placeholder="Ketik kode QR manual..." style="flex:1; min-width:200px;">
+        <input type="text" id="manualCode" placeholder="Ketik kode QR manual..." style="flex:1; min-width:200px; padding:14px; border-radius:12px;">
         <button class="btn btn-primary" onclick="processManual()">✓ Proses</button>
       </div>
       <div id="scanResult" class="scan-result"></div>
@@ -269,13 +301,15 @@
 
 </div>
 
-<!-- HALAMAN PESERTA -->
+<!-- ========================================== -->
+<!-- HALAMAN PESERTA: FORM PERTANYAAN (VIA SCAN QR) -->
+<!-- ========================================== -->
 <div id="peserta-page">
   <div class="form-container">
     <h2>❓ Form Pertanyaan Cukai</h2>
     <p class="subtitle">Silakan ajukan pertanyaan Anda seputar materi sosialisasi cukai.</p>
     
-    <div class="info-box modal-content info" id="infoPeserta" style="margin-bottom:20px;">
+    <div class="modal-content info" id="infoPeserta" style="margin-bottom:20px; max-width:100%;">
       <p>Memuat data peserta...</p>
     </div>
 
@@ -294,12 +328,13 @@
   </div>
 </div>
 
-<!-- MODAL LOGIN -->
+<!-- MODAL LOGIN ADMIN -->
 <div class="modal" id="modalLogin">
   <div class="modal-content">
     <h3>🔒 Login Admin</h3>
-    <input type="password" id="adminPassword" placeholder="Password Admin" style="width:100%; margin-bottom:20px; text-align:center;" onkeypress="if(event.key === 'Enter') verifyAdmin()">
-    <div class="form-actions" style="justify-content:center;">
+    <p style="color:var(--text-muted); margin-bottom:20px; font-size:0.9rem;">Masukkan password untuk mengakses dashboard.</p>
+    <input type="password" id="adminPassword" placeholder="Password Admin" style="width:100%; margin-bottom:24px; text-align:center;" onkeypress="if(event.key === 'Enter') verifyAdmin()">
+    <div class="form-actions">
       <button class="btn btn-primary" style="flex:1;" onclick="verifyAdmin()">Masuk</button>
       <button class="btn btn-danger" style="flex:1;" onclick="closeLogin()">Batal</button>
     </div>
@@ -343,15 +378,34 @@
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbzgCRTHKXhqXS20HmW9ioDoRE3qlObdqnivUS_V9934rRv0pOkGNGPRLGSPvwFyDntAmw/exec';
 
+/* ==========================================
+   ROUTING (ADMIN vs PESERTA)
+   ========================================== */
 const urlParams = new URLSearchParams(window.location.search);
 const kodePesertaFromUrl = urlParams.get('kode');
 
 if (kodePesertaFromUrl) {
+  // Jika scan QR, tampilkan form peserta
+  document.getElementById('top-bar').style.display = 'none';
+  document.getElementById('front-page').style.display = 'none';
   document.getElementById('admin-page').classList.remove('active');
   document.getElementById('peserta-page').classList.add('active');
   loadPesertaForm(kodePesertaFromUrl);
+} else {
+  // Jika halaman depan, load data untuk dropdown perusahaan
+  loadData();
 }
 
+function backToFront() {
+  document.getElementById('admin-page').classList.remove('active');
+  document.getElementById('top-bar').style.display = 'flex';
+  document.getElementById('front-page').style.display = 'flex';
+  window.history.pushState({}, document.title, window.location.pathname);
+}
+
+/* ==========================================
+   FORM PESERTA (PERTANYAAN)
+   ========================================== */
 let pesertaFormData = null;
 async function loadPesertaForm(kode) {
   try {
@@ -395,6 +449,9 @@ async function kirimPertanyaan() {
   document.getElementById('successMsg').style.display = 'block';
 }
 
+/* ==========================================
+   LOGIKA ADMIN
+   ========================================== */
 let peserta = [];
 let qnaList = [];
 let mejaList = [];
@@ -404,7 +461,6 @@ let lastScanTime = 0;
 let isOnline = false;
 let isAdmin = false;
 let adminPassword = "";
-let pendingTab = null, pendingBtn = null;
 
 function showToast(msg, type = 'info') {
   const t = document.getElementById('toast');
@@ -421,29 +477,42 @@ function setConn(state) {
 }
 
 function requestAdmin(tabName, btn) {
-  if (isAdmin) { switchTab(tabName, btn); return; }
-  pendingTab = tabName; pendingBtn = btn;
+  if (isAdmin) {
+    document.getElementById('top-bar').style.display = 'none';
+    document.getElementById('front-page').style.display = 'none';
+    document.getElementById('admin-page').classList.add('active');
+    switchTab('data', document.getElementById('tab-btn-data')); // Default ke tab Data saat login
+    return;
+  }
   document.getElementById('modalLogin').classList.add('active');
   document.getElementById('adminPassword').value = '';
   document.getElementById('adminPassword').focus();
 }
+
 function verifyAdmin() {
   if (document.getElementById('adminPassword').value === 'admin123') { 
     isAdmin = true; adminPassword = 'admin123'; closeLogin();
-    document.getElementById('btnLogout').style.display = 'inline-flex';
     showToast('Login Berhasil', 'success');
-    if (pendingTab && pendingBtn) switchTab(pendingTab, pendingBtn);
+    
+    // Pindah ke Halaman Admin
+    document.getElementById('top-bar').style.display = 'none';
+    document.getElementById('front-page').style.display = 'none';
+    document.getElementById('admin-page').classList.add('active');
+    
+    // Set tab default ke Data Peserta
+    switchTab('data', document.getElementById('tab-btn-data'));
   } else { showToast('Password Salah!', 'error'); document.getElementById('adminPassword').value = ''; }
 }
-function closeLogin() { document.getElementById('modalLogin').classList.remove('active'); pendingTab = null; pendingBtn = null; }
+
+function closeLogin() { document.getElementById('modalLogin').classList.remove('active'); }
+
 function logoutAdmin() {
-  isAdmin = false; adminPassword = ""; document.getElementById('btnLogout').style.display = 'none';
-  switchTab('registrasi', document.getElementById('tab-btn-registrasi'));
+  isAdmin = false; adminPassword = "";
+  backToFront(); // Kembali ke halaman depan
   stopScanner(); showToast('Logout Berhasil', 'info');
 }
 
 function switchTab(name, btn) {
-  if ((name === 'scan' || name === 'data' || name === 'rekap') && !isAdmin) { requestAdmin(name, btn); return; }
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
@@ -454,6 +523,9 @@ function switchTab(name, btn) {
   if (name !== 'scan') stopScanner();
 }
 
+/* ==========================================
+   LOAD DATA & DROPDOWN
+   ========================================== */
 async function loadData(showToastNotif = false) {
   setConn('loading');
   try {
@@ -484,7 +556,8 @@ async function loadData(showToastNotif = false) {
     if (isAdmin) { renderTable(); renderTableQna(); }
     if (showToastNotif) showToast('Data berhasil dimuat', 'success');
   } catch (err) {
-    console.error(err); setConn('offline'); showToast('Gagal memuat data', 'error');
+    console.error(err); setConn('offline'); 
+    if(showToastNotif) showToast('Gagal memuat data', 'error');
   }
 }
 
@@ -502,6 +575,9 @@ function updateDropdownPerusahaan() {
   if (currentVal && uniqueCompanies.includes(currentVal)) select.value = currentVal;
 }
 
+/* ==========================================
+   KIRIM DATA (VIA IFRAME)
+   ========================================== */
 function sendData(payload) {
   return new Promise((resolve) => {
     const iframeName = 'hidden_iframe_' + Date.now();
@@ -519,6 +595,9 @@ function sendData(payload) {
   });
 }
 
+/* ==========================================
+   FORM REGISTRASI PENDAFTARAN
+   ========================================== */
 document.getElementById('formRegistrasi').addEventListener('submit', async function(e) {
   e.preventDefault();
   const btn = document.getElementById('btnSubmit');
@@ -534,10 +613,10 @@ document.getElementById('formRegistrasi').addEventListener('submit', async funct
   };
   try {
     await sendData(data);
-    this.reset(); showToast('Peserta berhasil disimpan', 'success');
+    this.reset(); showToast('Pendaftaran Berhasil!', 'success');
     showQrModal(data); await loadData(); 
   } catch (err) { showToast('Gagal menyimpan', 'error'); } 
-  finally { btn.disabled = false; btn.textContent = '💾 Simpan & Generate QR'; }
+  finally { btn.disabled = false; btn.textContent = '💾 Daftar & Dapatkan QR Code'; }
 });
 
 function showQrModal(p) {
@@ -549,6 +628,9 @@ function showQrModal(p) {
 }
 function printQr() { window.print(); }
 
+/* ==========================================
+   TAMPILKAN QR FORM PERTANYAAN
+   ========================================== */
 function showQrFormModal(p) {
   let nomorMeja = "-";
   if (mejaList) {
@@ -568,6 +650,9 @@ function showQrFormModal(p) {
   document.getElementById('modalQrForm').classList.add('active');
 }
 
+/* ==========================================
+   RENDER TABEL DATA PESERTA
+   ========================================== */
 function getFiltered() {
   const q = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
   const status = document.getElementById('filterStatus')?.value || 'all';
@@ -616,6 +701,9 @@ async function clearAll() {
   await loadData();
 }
 
+/* ==========================================
+   RENDER TABEL REKAP PERTANYAAN
+   ========================================== */
 function renderTableQna() {
   const tbody = document.getElementById('tbodyQna');
   const q = (document.getElementById('searchQna')?.value || '').toLowerCase().trim();
@@ -633,6 +721,9 @@ function renderTableQna() {
   }).join('');
 }
 
+/* ==========================================
+   SCANNER QR CODE
+   ========================================== */
 function startScanner() {
   if (scanning) return;
   document.getElementById('reader').classList.add('active');
@@ -701,6 +792,9 @@ async function processCode(code) {
   if (updatedPeserta) showQrFormModal(updatedPeserta);
 }
 
+/* ==========================================
+   EXPORT & PRINT
+   ========================================== */
 function exportCSV() {
   const list = getFiltered();
   if (list.length === 0) return;
@@ -755,8 +849,6 @@ function printAllQrCodes() {
   <\/script></body></html>`;
   win.document.write(html); win.document.close();
 }
-
-if (!kodePesertaFromUrl) { loadData(); }
 </script>
 </body>
 </html>
